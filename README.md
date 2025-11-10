@@ -5,8 +5,6 @@ This repository is dedicated to creating a multi-purpose automated tool for the 
 
 Reported [Issues](https://github.com/wyanido/pokebot-nds/issues) and donations are very appreciated, as making this project widely compatible as the sole developer takes a lot of time and work.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/B0B7RMWPP)
-
 ## Getting Started
 #### Prerequisites
 You'll need to install [node.js](https://nodejs.org/en), and have a recent version of [BizHawk](https://github.com/TASEmulators/BizHawk/releases/latest) or [DeSmuME](https://github.com/TASEmulators/desmume/releases/latest) in order to use this tool. 
