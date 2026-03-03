@@ -1,9 +1,9 @@
 -----------------------------------------------------------------------------
 -- General bot methods for all games
--- Author: wyanido, storyzealot
+-- Author: wyanido, storyzealot, Zyrne
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
-
+pointers = pointers or {}
 --- Logs wild encounters without automated inputs while the user plays
 function mode_manual()
     while true do
@@ -21,41 +21,163 @@ function mode_manual()
     end
 end
 
---- Continuously reels in Pokemon with the registered fishing rod
+---------------------------------------------------------
+-- UNIVERSAL FISHING MODULE (Gen 4 + Gen 5)
+---------------------------------------------------------
+
+pointers.fishing = pointers.fishing or {}
+
+-- Gen 4
+pointers.fishing.D  = { fishing_exclamation_popup = 0x02291E57 }
+pointers.fishing.P  = { fishing_exclamation_popup = 0x02291E1F }
+pointers.fishing.PL = { fishing_exclamation_popup = 0x022A1AAF }
+
+pointers.fishing.HG = { fishing_exclamation_popup = 0x021DEA33 }
+pointers.fishing.SS = { fishing_exclamation_popup = 0x021DEA33 } 
+
+-- Gen 5
+pointers.fishing.B  = { fishing_exclamation_popup = 0x02259857 }
+pointers.fishing.W  = { fishing_exclamation_popup = 0x02259877 }
+
+pointers.fishing.B2 = { fishing_exclamation_popup = 0x0224738F }
+pointers.fishing.W2 = { fishing_exclamation_popup = 0x022473CF }
+
+---------------------------------------------------------
+-- SAFE POINTER RESOLUTION
+---------------------------------------------------------
+
+local GAME = _ROM.version
+local fish_ptr = pointers.fishing[GAME]
+
+if not fish_ptr then
+    fish_ptr = { fishing_exclamation_popup = 0x0211184C } -- fallback
+    pointers.fishing[GAME] = fish_ptr
+end
+
+---------------------------------------------------------
+-- COUNTERS
+---------------------------------------------------------
+
+bite_count = bite_count or 0
+miss_count = miss_count or 0
+
+local function print_bite_status()
+    print("Bites: " .. bite_count .. " | Misses: " .. miss_count)
+end
+
+local function count_bite()
+    bite_count = bite_count + 1
+    print_bite_status()
+end
+
+local function count_miss()
+    miss_count = miss_count + 1
+    print_bite_status()
+end
+
+---------------------------------------------------------
+-- RAW FLAG READ
+---------------------------------------------------------
+
+local function fishing_flag()
+    return mbyte(fish_ptr.fishing_exclamation_popup)
+end
+
+---------------------------------------------------------
+-- UNIVERSAL BITE DETECTOR
+---------------------------------------------------------
+
+local function fishing_bite_detected(v)
+
+    -- SS: simple state, bite = 1
+    if GAME == "SS" or GAME == "HG" then
+        return v == 1
+    end
+
+    -- Black & White: bite = 2
+    if GAME == "B" or GAME == "W" then
+        return v == 2
+    end
+
+    -- Black 2 / White 2: bite = 2
+    if GAME == "B2" or GAME == "W2" then
+        return v == 2
+    end
+
+    -- Diamond / Pearl / Platinum: bite = 4
+    if GAME == "D" or GAME == "P" or GAME == "PL" then
+        return v == 4
+    end
+
+    return false
+end
+
+---------------------------------------------------------
+-- MAIN FISHING MODE (FRAMEADVANCE DETECTOR)
+---------------------------------------------------------
+
 function mode_fishing()
-    while not game_state.in_battle do
-        press_button("Y")
-        wait_frames(60)
+    local TIMEOUT_FRAMES = 300
 
-        while not fishing_status_changed() do 
-            wait_frames(1)
-        end
+    if game_state.in_battle then
+        process_wild_encounter()
+        return
+    end
 
-        if fishing_has_bite() then
-            print("Landed a Pokemon!")
+    -- Cast rod
+    press_button("Y")
+    wait_frames(60)
+
+    local frames = 0
+    local bite = false
+
+    -- High‑frequency detection loop
+    while frames < TIMEOUT_FRAMES do
+        local v = fishing_flag()
+
+        if fishing_bite_detected(v) then
+            press_button("A")
+            bite = true
             break
-        else
-            print("Not even a nibble...")
-            press_sequence(30, "A", 20)
         end
+
+        frames = frames + 1
+        emu.frameadvance()
     end
 
-    while not game_state.in_battle do
-        progress_text()
+    if bite then
+        local wait_frames_count = 0
+        while not game_state.in_battle and wait_frames_count < 180 do
+            progress_text()
+            wait_frames_count = wait_frames_count + 1
+        end
+
+        if game_state.in_battle then
+            count_bite()
+            process_wild_encounter()
+            wait_frames(90)
+        else
+            count_miss()
+        end
+    else
+        print("Not even a nibble or got away...")
+        count_miss()
+        press_sequence(30, "A", 20)
     end
-
-    process_wild_encounter()
-
-    wait_frames(90)
 end
 
 --- Returns the index of the first non-fainted Pokémon in the party
 function get_lead_mon_index()
-    for i = 1, 6, 1 do
-        if party[i].currentHP ~= 0 then
+	update_party()
+
+    for i = 1, 6 do
+        local mon = party[i]
+        if mon and mon.currentHP and mon.currentHP > 0 then
             return i
-        end 
+        end
     end
+
+    return 1 -- fallback to slot 1
 end
 
 --- Finds and uses the best available options to safely weaken the foe
@@ -291,8 +413,6 @@ function process_wild_encounter()
         end
     end
 
-    wait_frames(90)
-    
     if config.pickup then
         do_pickup()
     end
@@ -373,7 +493,7 @@ function battle_foe()
             wait_frames(100)
             touch_screen_at(125, 65)
             wait_frames(60)
-            press_button("B")
+            press_button("A")
             wait_frames(120)
             return
         end
@@ -535,13 +655,13 @@ function mode_gift()
         print("Waiting to reach overworld...")
 
         while not game_state.in_game do
-            progress_text()
+            progress_text_A()
         end
     end
 
     local og_party_count = #party
     while #party == og_party_count do
-        progress_text()
+        progress_text_A()
     end
 
     local mon = party[#party]
@@ -564,7 +684,7 @@ function mode_static_encounters()
             hold_button("Up")
         end
 
-        progress_text()
+        progress_text_A()
     end
 
     local mon = foe[1]
@@ -598,6 +718,13 @@ end
 
 --- Progress text with imperfect inputs to increase the randomness of frames hit
 function progress_text()
+    hold_button("B")
+    wait_frames(math.random(5, 20))
+    release_button("B")
+    wait_frames(5)
+end
+
+function progress_text_A()
     hold_button("A")
     wait_frames(math.random(5, 20))
     release_button("A")

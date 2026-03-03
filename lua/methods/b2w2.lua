@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- Bot method overrides for B2W2
--- Author: wyanido
+-- Author: wyanido, storyzealot
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 
@@ -114,8 +114,6 @@ function mode_starters()
         while not game_state.in_game do 
             progress_text()
         end
-
-        wait_frames(200)
     end
 
     print("Opening Starter Selection...")
@@ -156,7 +154,6 @@ end
 function mode_hidden_grottos()
     local function grotto_has_regenerated()
         local grotto_value = mbyte(pointers.hidden_grottos + config.grotto)
-        print("Grotto value: ", grotto_value)  -- Debug output
         return bit.band(grotto_value, 1) == 1
     end
 
@@ -177,7 +174,7 @@ function mode_hidden_grottos()
     end
 
     local function enter_grotto()
-        press_sequence("Up", 4, "A")
+        press_sequence(4, "A")
 
         while game_state.map_name ~= "Hidden Grotto" do
             progress_text()
@@ -207,8 +204,9 @@ function mode_hidden_grottos()
 
     while not grotto_has_regenerated() do
         bike_back_and_forth()
+
         if game_state.in_battle then
-            abort("Please use a Repel while hunting this grotto!")
+            abort("Please a Repel while hunting this grotto!")
         end
     end
     

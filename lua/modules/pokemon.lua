@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- Pure Lua handler for emulator Pokemon data
--- Author: wyanido
+-- Author: wyanido, Zyrne
 -- Homepage: https://github.com/wyanido/pokebot-nds
 --
 -- Responsible for reading, parsing, and handling general logic
@@ -434,9 +434,33 @@ function pokemon.matches_ruleset(mon, ruleset)
     end
 
     -- Other traits don't matter with this override
-    if config.always_catch_shinies and mon.shiny then
-        return true
-    end
+
+	if config.always_catch_shinies and mon.shiny then
+		return true
+	end
+-- 100% Female species whitelist
+WHITELIST_100_FEMALE = {
+    [29] = true,   -- Nidoran♀
+    [30] = true,   -- Nidorina
+    [31] = true,   -- Nidoqueen
+    [113] = true,  -- Chansey
+    [242] = true,  -- Blissey
+    [115] = true,  -- Kangaskhan
+    [124] = true,  -- Jynx
+    [241] = true,  -- Miltank
+    [548] = true,  -- Petilil
+    [549] = true,  -- Lilligant
+    [629] = true,  -- Vullaby
+    [630] = true,  -- Mandibuzz
+}
+
+	-- New override: shiny male or genderless only
+	if config.always_catch_shiny_male_genderless and mon.shiny then
+		if mon.gender == "Genderless" or mon.gender == "Male" or WHITELIST_100_FEMALE[mon.species] then
+			return true
+		end
+	end
+
 
     -- This function intentionally doesn't do an early exit
     -- so it can print a warning when a meaningless value 
