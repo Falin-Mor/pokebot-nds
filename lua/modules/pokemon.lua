@@ -461,7 +461,13 @@ WHITELIST_100_FEMALE = {
 		end
 	end
 
-
+	-- New override: Extreme IVs
+	if config.HighLowIV then
+		if mon.ivSum >= 180 or mon.ivSum == 0 then
+			return true
+		end
+	end
+	
     -- This function intentionally doesn't do an early exit
     -- so it can print a warning when a meaningless value 
     -- is written into target traits

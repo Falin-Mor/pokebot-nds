@@ -4,6 +4,9 @@
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 pointers = pointers or {}
+-- TEMP: Dump all pointer names so we know what exists
+
+
 --- Logs wild encounters without automated inputs while the user plays
 function mode_manual()
     while true do

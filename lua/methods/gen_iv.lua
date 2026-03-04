@@ -44,7 +44,6 @@ function update_pointers()
         battle_menu_state      = anchor + 0x455A6,
         battle_menu_state2     = anchor - 0xD3FC,
         battle_indicator       = 0x21A1B2A + _ROM.offset,
-        fishing_bite_indicator = 0x21D5E16 + _ROM.offset,
 
         trainer_name = anchor - 0x22,
         trainer_id   = anchor - 0x12,
@@ -112,16 +111,6 @@ function get_usable_balls()
     end
 
     return balls
-end
-
---- Returns true if the rod state has changed from being cast
-function fishing_status_changed()
-    return mbyte(pointers.fishing_bite_indicator) ~= 0
-end
-
---- Returns true if a Pokemon is on the hook
-function fishing_has_bite()
-    return mbyte(pointers.fishing_bite_indicator) == 1
 end
 
 --- Navigates to the Solaceon Town daycare and releases all hatched Pokemon in the party
@@ -336,23 +325,23 @@ function mode_starters()
 end
 
 --- Encounters wild Pokemon until a target is found. Can battle and catch
-function mode_random_encounters()
-    local function spin()
-        -- Prevent accidentally taking a step by
-        -- preventing a down input while facing down
-        if mbyte(pointers.facing) == 1 then
-            press_sequence("Right", 3)
-        end
+	function mode_random_encounters()
+local all_dirs = {"Up", "Down", "Left", "Right"}
 
-        while not game_state.in_battle do
-            press_sequence(
-                "Down", 3,
-                "Left", 3,
-                "Up", 3,
-                "Right", 3
-            )
+local function spin()
+    -- Read facing safely
+    local facing_value = mbyte(pointers.facing)      -- 0=Up,1=Down,2=Left,3=Right
+    local facing_dir = all_dirs[facing_value + 1]    -- Convert to string
+
+    while not game_state.in_battle do
+        -- Build a 3‑direction spin that excludes the facing direction
+        for _, dir in ipairs(all_dirs) do
+            if dir ~= facing_dir then
+                press_sequence(dir, 3)
+            end
         end
     end
+end
 
     local function run_back_and_forth()
         local dir1, dir2, start_face
@@ -360,11 +349,11 @@ function mode_random_encounters()
         if config.move_direction == "horizontal" then
             dir1 = "Left"
             dir2 = "Right"
-            start_face = 2
+            start_face = 0
         else
             dir1 = "Up"
             dir2 = "Down"
-            start_face = 0
+            start_face = 2
         end
 
         if mbyte(pointers.facing) ~= start_face then
@@ -376,8 +365,10 @@ function mode_random_encounters()
         while not game_state.in_battle do
             hold_button(dir1)
             wait_frames(7)
+			release_button(dir1)
             hold_button(dir2)
             wait_frames(7)
+			release_button(dir2)
         end
 
         release_button("B")
