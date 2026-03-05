@@ -4,25 +4,6 @@
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 pointers = pointers or {}
--- TEMP: Dump all pointer names so we know what exists
-
-
---- Logs wild encounters without automated inputs while the user plays
-function mode_manual()
-    while true do
-        while not game_state.in_battle do
-            process_frame()
-        end
-
-        for i = 1, #foe, 1 do
-            pokemon.log_encounter(foe[i])
-        end
-
-        while game_state.in_battle do
-            process_frame()
-        end
-    end
-end
 
 ---------------------------------------------------------
 -- UNIVERSAL FISHING MODULE (Gen 4 + Gen 5)
@@ -455,12 +436,8 @@ function save_game()
     print("Saving game...")
     
     open_menu("Save")
-    press_sequence("A", 90, "A", 60)
+    press_sequence("A", 90, "A", 600)
     
-    while mbyte(pointers.save_indicator) ~= 0 do
-        press_sequence("A", 12)
-    end
-
     if _EMU == "BizHawk" then
         client.saveram() -- Flush save ram to the disk	
     end
