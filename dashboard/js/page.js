@@ -37,18 +37,10 @@ class Header extends HTMLElement {
                         </a>
                     </li>
                     <li class="nav-item nav-link px-10">
-                        <a href="https://github.com/wyanido/pokebot-nds/" target="_blank">
+                        <a href="https://github.com/Falin-Mor/pokebot-nds" target="_blank">
                             <button type="button" class="btn position-relative px-10">
                                 <i class="fa-brands fa-github"></i>
                                 Github
-                            </button>
-                        </a>
-                    </li>
-                    <li class="nav-item nav-link px-10">
-                        <a href="https://ko-fi.com/B0B7RMWPP" target="_blank">
-                            <button type="button" class="btn position-relative px-10">
-                                <i class="fa-solid fa-heart"></i>
-                                Donate
                             </button>
                         </a>
                     </li>
