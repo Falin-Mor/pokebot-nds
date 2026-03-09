@@ -20,9 +20,9 @@ Alternatively, download [the latest release](https://github.com/wyanido/pokebot-
     - `npm i`
     - `npm start`
 2. Use the dashboard's Config tab to customise the bot behaviour for your current task. 
-3. Open your emulator's Lua Console, and load `pokebot-nds.lua`.
-    - **BizHawk**: `Tools > Lua Console`
-    - **DeSmuME**: `Tools > Lua Scripting > New Lua Script Window`
+3. Open the Lua Console, and load `pokebot-nds.lua`. `Tools > Lua Scripting > New Lua Script Window`
+
+NOTE: Bizhawk has MAJOR issues and is no longer supported.
 
 The game will then be connected to the dashboard, which you can view info for on the Dashboard tab. The bot will immediately start acting according to your Config, and log any encounters to the dashboard.
 
