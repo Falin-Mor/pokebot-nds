@@ -237,7 +237,7 @@ function mode_starters()
         print("Waiting to reach overworld...")
 
         while not game_state.in_game do
-            progress_text()
+            progress_text_A()
         end
     end
 
@@ -249,7 +249,7 @@ function mode_starters()
     print("Opening Starter Selection...")
 
     while mbyte(pointers.starter_selection_is_open) == 0 do
-        progress_text()
+        progress_text_A()
     end
 
     print("Choosing Starter...")
@@ -267,7 +267,7 @@ function mode_starters()
     end
 
     while #party == 0 do
-        progress_text()
+        progress_text_A()
     end
 
     local mon = party[1]
