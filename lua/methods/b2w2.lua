@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- Bot method overrides for B2W2
--- Author: wyanido, storyzealot
+-- Author: wyanido, storyzealot, Pearl8520
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 
@@ -101,25 +101,29 @@ end
 
 function mode_starters()
     cycle_starter_choice()
-    
+
     local balls = {
-        [0] = { x = 40, y = 100 }, -- Snivy
-        [1] = { x = 128, y = 100 }, -- tepig
-        [2] = { x = 210, y = 100 }, -- Oshawott
+        [0] = { x = 40, y = 100 },
+        [1] = { x = 128, y = 100 },
+        [2] = { x = 210, y = 100 },
     }
 
+    -- Mash A first
     if not game_state.in_game then
-        print("Waiting to reach overworld...")
-
-        while not game_state.in_game do 
-            progress_text()
+        print("Mashing A through black screen / menus...")
+        for i = 1, 1 do
+            joypad.set({A=true})
+            emu.frameadvance()
         end
+        for i = 1, 60 do
+            emu.frameadvance()
+        end
+        return  -- skip the rest of the function safely
     end
-
     print("Opening Starter Selection...")
 
     while mbyte(pointers.starter_selection_is_open) ~= 1 do
-        progress_text()
+        progress_text_A()
     end
 
     print("Choosing Starter...")
@@ -137,7 +141,7 @@ function mode_starters()
     end
 
     while #party == 0 do 
-        progress_text()
+        progress_text_A()
     end
 
     local mon = party[1]

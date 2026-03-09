@@ -436,7 +436,7 @@ function save_game()
     print("Saving game...")
     
     open_menu("Save")
-    press_sequence("A", 90, "A", 600)
+    press_sequence("A", 90, "A", 900)
     
     if _EMU == "BizHawk" then
         client.saveram() -- Flush save ram to the disk	
