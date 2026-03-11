@@ -123,7 +123,7 @@ function mode_starters()
     print("Opening Starter Selection...")
 
     while mbyte(pointers.starter_selection_is_open) ~= 1 do
-        progress_text_A()
+        progress_text()
     end
 
     print("Choosing Starter...")
@@ -141,7 +141,7 @@ function mode_starters()
     end
 
     while #party == 0 do 
-        progress_text_A()
+        progress_text()
     end
 
     local mon = party[1]

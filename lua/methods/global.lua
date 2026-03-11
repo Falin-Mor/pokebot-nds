@@ -437,11 +437,6 @@ function save_game()
     
     open_menu("Save")
     press_sequence("A", 90, "A", 900)
-    
-    if _EMU == "BizHawk" then
-        client.saveram() -- Flush save ram to the disk	
-    end
-
     press_sequence("B", 10)
 end
 
@@ -635,13 +630,13 @@ function mode_gift()
         print("Waiting to reach overworld...")
 
         while not game_state.in_game do
-            progress_text_A()
+            progress_text()
         end
     end
 
     local og_party_count = #party
     while #party == og_party_count do
-        progress_text_A()
+        progress_text()
     end
 
     local mon = party[#party]
@@ -664,7 +659,7 @@ function mode_static_encounters()
             hold_button("Up")
         end
 
-        progress_text_A()
+        progress_text()
     end
 
     local mon = foe[1]
@@ -698,15 +693,15 @@ end
 
 --- Progress text with imperfect inputs to increase the randomness of frames hit
 function progress_text()
-    hold_button("B")
-    wait_frames(math.random(5, 20))
-    release_button("B")
-    wait_frames(5)
-end
-
-function progress_text_A()
     hold_button("A")
     wait_frames(math.random(5, 20))
     release_button("A")
+    wait_frames(5)
+end
+
+function progress_text_B()
+    hold_button("B")
+    wait_frames(math.random(5, 20))
+    release_button("B")
     wait_frames(5)
 end
