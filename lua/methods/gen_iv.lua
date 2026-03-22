@@ -303,9 +303,13 @@ function mode_starters()
 
     print("Selecting starter...")
 
+    press_sequence("Left", 10)
+	
     while mbyte(pointers.selected_starter) < starter do
         press_sequence("Right", 5)
     end
+
+	press_button("A")	
 
     -- Wait until starter is added to party
     while #party == 0 do

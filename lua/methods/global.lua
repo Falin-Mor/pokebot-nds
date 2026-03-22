@@ -269,7 +269,7 @@ function catch_pokemon()
     local function use_ball(index)
         local page = math.floor((index - 1) / 6)
         local current_page = mbyte(pointers.battle_bag_page)
-
+	
         while current_page ~= page do -- Scroll to page with ball
             if current_page < page then
                 touch_screen_at(58, 180)
@@ -285,8 +285,11 @@ function catch_pokemon()
         -- Select and use ball
         local button = (index - 1) % 6 + 1
         local x = 80 * ((button - 1) % 2 + 1)
+		-- Normalize ONLY for BW/B2/W/W2 (these games use 1-based page indexing)
+		if GAME == "B" or GAME == "W" or GAME == "B2" or GAME == "W2" then
+        x = 80 * ((button - 1) % 2)
+		end		
         local y = 30 + 50 * math.floor((button - 1) / 2)
-
         touch_screen_at(x, y)
         wait_frames(30)
         touch_screen_at(108, 176) -- USE
@@ -704,4 +707,182 @@ function progress_text_B()
     wait_frames(math.random(5, 20))
     release_button("B")
     wait_frames(5)
+end
+---------------------------------------------------------------
+-- Clean Bot State Machine
+---------------------------------------------------------------
+
+bot = bot or {
+    phase = "walk_left",
+    timer = 0,
+	retry = 0,
+    WALK_FRAMES   = 90,
+    CUTSCENE_WAIT = 40,
+}
+
+
+function mode_hgss_roamers()
+---------------------------------------------------------------
+-- Roamer Reader 
+---------------------------------------------------------------
+
+local bit = bit or require("bit")
+
+local function read_u32(a)
+    local b1 = memory.readbyte(a)
+    local b2 = memory.readbyte(a+1)
+    local b3 = memory.readbyte(a+2)
+    local b4 = memory.readbyte(a+3)
+    return b1 + bit.lshift(b2,8) + bit.lshift(b3,16) + bit.lshift(b4,24)
+end
+
+local function read_u16(a)
+    local b1 = memory.readbyte(a)
+    local b2 = memory.readbyte(a+1)
+    return b1 + bit.lshift(b2,8)
+end
+
+local function find_roamer_header()
+    local START = 0x02280000
+    local END   = 0x02283000
+
+    for addr = START, END, 4 do
+        local hp1 = read_u32(addr)
+        local hp2 = read_u32(addr + 0x14)
+
+        if hp1 == 65576 and hp2 == 65576 then
+            local header = addr - 0x20
+
+            if header % 4 == 0 then
+                return header
+            end
+        end
+    end
+
+    return nil
+end
+
+
+local function read_roamer(core)
+    local loc  = read_u32(core)
+    local iv32 = read_u32(core + 4)
+    local pid  = read_u32(core + 8)
+    return loc, iv32, pid
+end
+
+local function is_shiny(pid, tid, sid)
+    local low  = bit.band(pid, 0xFFFF)
+    local high = bit.rshift(pid, 16)
+    return bit.bxor(low, high, tid, sid) < 8
+end
+
+local TID = read_u16(0x0223D2E0)
+local SID = read_u16(0x0223D2E2)
+
+local function valid_roamer(iv32, pid)
+    return (iv32 ~= 0 and iv32 ~= 0xFFFFFFFF and pid ~= 0 and pid ~= 0xFFFFFFFF)
+end
+
+---------------------------------------------------------------
+-- Phase: Walk Left
+---------------------------------------------------------------
+
+local function phase_walk_left()
+    bot.timer = bot.timer + 1
+    hold_button("Left")
+
+    if bot.timer >= bot.WALK_FRAMES then
+        release_button("Left")
+        bot.phase = "wait_cutscene"
+        bot.timer = 0
+        print("Waiting for roamers to populate...")
+    end
+end
+
+---------------------------------------------------------------
+-- Phase: Wait for Cutscene (timing‑based)
+---------------------------------------------------------------
+
+local function phase_wait_cutscene()
+    bot.timer = bot.timer + 1
+    progress_text()
+
+    if bot.timer >= bot.CUTSCENE_WAIT then
+        bot.phase = "check_roamers"
+        bot.timer = 0
+        print("Checking roamers...")
+    end
+end
+
+---------------------------------------------------------------
+-- Phase: Check Roamers
+---------------------------------------------------------------
+
+local function phase_check_roamers()
+local header = find_roamer_header()
+
+	if not header then
+		if bot.retry == 0 then
+			bot.retry = 1			
+			print("No roamer header yet, retrying once...")			
+			bot.phase = "walk_left"
+			bot.timer = 0
+			return
+		else
+			print("Still no header. Stopping script.")
+			abort("Roamer header not found")   -- clean script exit
+		end
+	end
+
+	bot.retry = 0
+
+    local raikou = header + 0x10
+    local entei  = header + 0x24
+
+    local _, r_iv32, r_pid = read_roamer(raikou)
+    local _, e_iv32, e_pid = read_roamer(entei)
+
+    print(string.format("Raikou PID %08X  Shiny=%s", r_pid, tostring(is_shiny(r_pid, TID, SID))))
+    print(string.format("Entei  PID %08X  Shiny=%s", e_pid, tostring(is_shiny(e_pid, TID, SID))))
+
+    if is_shiny(r_pid, TID, SID) or is_shiny(e_pid, TID, SID) then
+        print("✨ SHINY FOUND ✨")
+    abort("Ending Script")   -- cleanly terminates the Lua script
+	end
+
+    bot.phase = "reset"
+    bot.timer = 0
+end
+---------------------------------------------------------------
+-- Phase: Reset + long wait + progress_text()
+---------------------------------------------------------------
+
+    local function phase_reset()
+        wait_frames(math.random(0, 45)) -- jitter to break seed loops
+
+        print("Soft resetting...")
+        soft_reset()
+
+        wait_frames(300)
+
+        for i = 1, 40 do
+            progress_text()
+        end
+
+        print("Starting cutscene...")
+        bot.phase = "walk_left"
+        bot.timer = 0
+    end
+    ---------------------------------------------------------------
+    -- Dispatcher (one tick per frame)
+    ---------------------------------------------------------------
+    if bot.phase == "walk_left" then
+        phase_walk_left()
+    elseif bot.phase == "wait_cutscene" then
+        phase_wait_cutscene()
+    elseif bot.phase == "check_roamers" then
+        phase_check_roamers()
+    elseif bot.phase == "reset" then
+        phase_reset()
+    end
 end

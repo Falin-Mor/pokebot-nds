@@ -52,9 +52,6 @@ function update_pointers()
         text_interrupt            = 0x2172BA0 + _ROM.offset,
         battle_menu_state         = anchor + 0x1367C, -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
 
-        fishing_bite_indicator    = 0x20A8362 + _ROM.offset,
-        fishing_no_bite           = 0x21509DB + _ROM.offset,
-
         trainer_name = 0x2234FB0 + _ROM.offset,
         trainer_id   = 0x2234FC0 + _ROM.offset,
 
@@ -109,17 +106,7 @@ function open_menu(menu)
         touch_screen_at(200, 145)
     end
 
-    wait_frames(90)
-end
-
---- Returns true if the rod state has changed from being cast
-function fishing_status_changed()
-    return not (mword(pointers.fishing_bite_indicator) ~= 0xFFF1 and mbyte(pointers.fishing_no_bite) == 0)
-end
-
---- Returns true if a Pokemon is on the hook
-function fishing_has_bite()
-    return mword(pointers.fishing_bite_indicator) == 0xFFF1
+    wait_frames(900)
 end
 
 --- Converts bytes into readable text using the game's respective encoding method
@@ -288,10 +275,11 @@ function mode_random_encounters()
     }
 
     local function move_in_direction(dir)
-        if emu.framecount() % 10 == 0 then -- Re-apply repel
-            press_button_async("A")
-        end
 
+		if mdword(pointers.text_interrupt) == 2 then
+            press_sequence("A", 5, "A", 5, "B", 5)
+            wait_frames(10)
+        end
         hold_button(dir)
         wait_frames(7)
         release_button(dir)

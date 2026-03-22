@@ -238,22 +238,22 @@ function pokemon.parse_data(data, enrich)
 
     -- Block C
     mon.nickname = read_string(data, 0x48)
-    -- mon.originGame		 = read_real(0x5F, 1)
+    mon.originGame		 = read_real(0x5F, 1)
     -- mon.sinnohRibbonSet3 = read_real(0x60, 2)
     -- mon.sinnohRibbonSet3 = read_real(0x62, 2)
 
     -- Block D
-    -- mon.otName          = read_string(data, 0x68)
-    -- mon.dateEggReceived	= read_real(0x78, 3)
-    -- mon.dateMet			= read_real(0x7B, 3)
-    -- mon.eggLocation		= read_real(0x7E, 2)
-    -- mon.metLocation		= read_real(0x80, 2)
+    mon.otName          = read_string(data, 0x68)
+    mon.dateEggReceived	= read_real(0x78, 3)
+    mon.dateMet			= read_real(0x7B, 3)
+    mon.eggLocation		= read_real(0x7E, 2)
+    mon.metLocation		= read_real(0x80, 2)
     mon.pokerus = read_real(0x82, 1)
     mon.pokeball = read_real(0x83, 1)
-    -- mon.encounterType	= read_real(0x85, 1)
+    mon.encounterType	= read_real(0x85, 1)
 
     -- Battle Stats
-    -- mon.status       = read_real(0x88, 1)
+    mon.status       = read_real(0x88, 1)
     mon.level = read_real(0x8C, 1)
     -- mon.capsuleIndex = read_real(0x8D, 1)
     mon.currentHP = read_real(0x8E, 2)
