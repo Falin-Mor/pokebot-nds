@@ -776,8 +776,9 @@ local function is_shiny(pid, tid, sid)
     return bit.bxor(low, high, tid, sid) < 8
 end
 
-local TID = read_u16(0x0223D2E0)
-local SID = read_u16(0x0223D2E2)
+local tid_sid = mdword(pointers.trainer_id)
+local TID = bit.band(tid_sid, 0xFFFF)
+local SID = bit.rshift(tid_sid, 16)
 
 local function valid_roamer(iv32, pid)
     return (iv32 ~= 0 and iv32 ~= 0xFFFFFFFF and pid ~= 0 and pid ~= 0xFFFFFFFF)
