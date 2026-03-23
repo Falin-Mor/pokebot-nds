@@ -719,7 +719,7 @@ bot = bot or {
     WALK_FRAMES   = 90,
     CUTSCENE_WAIT = 40,
 }
-
+bot.seen = bot.seen or {}
 
 function mode_hgss_roamers()
 ---------------------------------------------------------------
@@ -841,9 +841,42 @@ local header = find_roamer_header()
 
     local _, r_iv32, r_pid = read_roamer(raikou)
     local _, e_iv32, e_pid = read_roamer(entei)
+	
+	local function calc_sv(pid)
+		local low  = bit.band(pid, 0xFFFF)
+		local high = bit.rshift(pid, 16)
+		return bit.bxor(low, high, TID, SID)
+	end
 
-    print(string.format("Raikou PID %08X  Shiny=%s", r_pid, tostring(is_shiny(r_pid, TID, SID))))
-    print(string.format("Entei  PID %08X  Shiny=%s", e_pid, tostring(is_shiny(e_pid, TID, SID))))
+	local r_sv = calc_sv(r_pid)
+	local e_sv = calc_sv(e_pid)
+
+	local key = string.format("%08X_%08X", r_pid, e_pid)
+
+	-- Dupe detection across entire session since last hard reset
+	if bot.seen[key] then
+		print("Duplicate PID pair detected! Performing hard reset to break seed path...")
+		bot.seen = {}   -- clear history
+		hard_reset()
+		bot.phase = "walk_left"
+		bot.timer = 0
+		return
+	end
+
+		-- Mark this PID pair as seen
+	bot.seen[key] = true
+		
+local function print_roamer(name, sv, shiny)
+    print(string.format(
+        "%-8s | %-12s | %-12s",
+        name,
+        string.format("SV: %5d", sv),
+        string.format("Shiny: %-5s", tostring(shiny))
+    ))
+end
+
+print_roamer("Raikou", r_sv, r_sv < 8)
+print_roamer("Entei",  e_sv, e_sv < 8)
 
     if is_shiny(r_pid, TID, SID) or is_shiny(e_pid, TID, SID) then
         print("✨ SHINY FOUND ✨")
@@ -853,6 +886,7 @@ local header = find_roamer_header()
     bot.phase = "reset"
     bot.timer = 0
 end
+
 ---------------------------------------------------------------
 -- Phase: Reset + long wait + progress_text()
 ---------------------------------------------------------------
