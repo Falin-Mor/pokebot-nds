@@ -725,6 +725,8 @@ function mode_hgss_roamers()
 ---------------------------------------------------------------
 -- Roamer Reader 
 ---------------------------------------------------------------
+local hunt_raikou = config.hunt_raikou
+local hunt_entei  = config.hunt_entei
 
 local bit = bit or require("bit")
 
@@ -876,13 +878,25 @@ local function print_roamer(name, sv, shiny)
     ))
 end
 
-print_roamer("Raikou", r_sv, r_sv < 8)
-print_roamer("Entei",  e_sv, e_sv < 8)
+if hunt_raikou then
+    print_roamer("Raikou", r_sv, r_sv < 8)
+end
 
-    if is_shiny(r_pid, TID, SID) or is_shiny(e_pid, TID, SID) then
-        print("✨ SHINY FOUND ✨")
-    abort("Ending Script")   -- cleanly terminates the Lua script
-	end
+if hunt_entei then
+    print_roamer("Entei",  e_sv, e_sv < 8)
+end
+
+if not hunt_raikou and not hunt_entei then
+    abort("Both roamer toggles are OFF — nothing to hunt.")
+end
+
+local r_shiny = hunt_raikou and is_shiny(r_pid, TID, SID)
+local e_shiny = hunt_entei  and is_shiny(e_pid, TID, SID)
+
+if r_shiny or e_shiny then
+    print("✨ SHINY FOUND ✨")
+    abort("Ending Script")
+end
 
     bot.phase = "reset"
     bot.timer = 0
@@ -917,6 +931,143 @@ end
         phase_wait_cutscene()
     elseif bot.phase == "check_roamers" then
         phase_check_roamers()
+    elseif bot.phase == "reset" then
+        phase_reset()
+    end
+end
+
+---------------------------------------------------------------------
+-- MODE: ROCK SMASH
+-- Automates Rock Smash encounters using Pokebot's built-in
+-- encounter engine (process_wild_encounter).
+--
+-- Loop:
+--   1. Tap A on rock
+--   2. Confirm Rock Smash
+--   3. Wait for event:
+--        - Battle → process_wild_encounter()
+--        - Item / Nothing → reset
+--   4. Soft reset → reload save → repeat
+---------------------------------------------------------------------
+
+function mode_rock_smash()
+
+    ---------------------------------------------------------------
+    -- Internal Bot State
+    ---------------------------------------------------------------
+    bot = bot or {
+        phase = "smash",
+        timer = 0,
+    }
+
+    ---------------------------------------------------------------
+    -- Phase: Initiate Rock Smash
+    -- Tap A on the rock to trigger the prompt.
+    ---------------------------------------------------------------
+    local function phase_smash()
+        press_button("A")
+        bot.phase = "confirm"
+        bot.timer = 0
+        print_debug("[Rock Smash] Initiating...")
+    end
+
+    ---------------------------------------------------------------
+    -- Phase: Confirm Rock Smash
+    -- Spam A to confirm the Rock Smash prompt.
+    ---------------------------------------------------------------
+    local function phase_confirm()
+        bot.timer = bot.timer + 1
+
+        press_button("A")
+
+        -- After ~40 frames, the animation or event begins
+        if bot.timer >= 40 then
+            bot.phase = "wait_event"
+            bot.timer = 0
+            print_debug("[Rock Smash] Waiting for result...")
+        end
+    end
+
+    ---------------------------------------------------------------
+    -- Phase: Wait for Event
+    -- Three possible outcomes:
+    --   1. Battle starts → handle via encounter engine
+    --   2. Item found → reset
+    --   3. Nothing happens → reset
+    ---------------------------------------------------------------
+    local function phase_wait_event()
+        bot.timer = bot.timer + 1
+
+        -- Progress text for item or "nothing happened"
+        progress_text()
+
+        -- Detect battle start
+        if game_state.in_battle then
+            print_debug("[Rock Smash] Battle detected!")
+            bot.phase = "handle_battle"
+            return
+        end
+
+        -- Timeout → item or nothing
+        if bot.timer >= 120 then
+            print_debug("[Rock Smash] No battle (item or nothing). Resetting...")
+            bot.phase = "reset"
+            bot.timer = 0
+        end
+    end
+
+    ---------------------------------------------------------------
+    -- Phase: Handle Battle
+    -- Delegates everything to Pokebot's encounter engine:
+    --   - shiny detection
+    --   - logging
+    --   - target rules
+    --   - flee/catch logic
+    ---------------------------------------------------------------
+    local function phase_handle_battle()
+        process_wild_encounter()
+
+        -- When battle ends, reset
+        if not game_state.in_battle then
+            bot.phase = "reset"
+            bot.timer = 0
+        end
+    end
+
+    ---------------------------------------------------------------
+    -- Phase: Reset
+    -- Soft reset → reload save → return to smash phase.
+    ---------------------------------------------------------------
+    local function phase_reset()
+        wait_frames(math.random(0, 45)) -- jitter to break seed loops
+
+        print_debug("[Rock Smash] Soft resetting...")
+        soft_reset()
+
+        -- Wait for game to load
+        wait_frames(300)
+
+        -- Spam A to load save
+        for i = 1, 40 do
+            progress_text()
+        end
+
+        print_debug("[Rock Smash] Restarting loop.")
+        bot.phase = "smash"
+        bot.timer = 0
+    end
+
+    ---------------------------------------------------------------
+    -- Dispatcher
+    ---------------------------------------------------------------
+    if bot.phase == "smash" then
+        phase_smash()
+    elseif bot.phase == "confirm" then
+        phase_confirm()
+    elseif bot.phase == "wait_event" then
+        phase_wait_event()
+    elseif bot.phase == "handle_battle" then
+        phase_handle_battle()
     elseif bot.phase == "reset" then
         phase_reset()
     end
