@@ -5,16 +5,7 @@
 -----------------------------------------------------------------------------
 local input_buffer = {}
 
--- Define touch screen methods specific to each emulator
-if _EMU == "BizHawk" then
-    function touch_screen_at(x, y)
-        joypad.setanalog({['Touch X'] = x, ['Touch Y'] = y})
-        hold_button("Touch")
-        wait_frames(4)
-        release_button("Touch")
-        joypad.setanalog({['Touch X'] = nil, ['Touch Y'] = nil}) -- Remove touch position override
-    end
-else
+
     function touch_screen_at(x, y)
         for i = 1, 4 do
             stylus.set({x = x, y = y, touch = true})
@@ -23,14 +14,11 @@ else
 
         stylus.set({touch = false})
     end
-end 
 
---- Adjusts for differences in input names between emulators by formatting them all consistently
 local function adjust_case(button)
-    if _EMU == "DeSmuME" then
-        if button == "Up" or button == "Down" or button == "Left" or button == "Right" or button == "Start" or button == "Select" then 
-            return string.lower(button)
-        end
+    if button == "Up" or button == "Down" or button == "Left" or button == "Right"
+       or button == "Start" or button == "Select" then
+        return string.lower(button)
     end
 
     return button

@@ -88,10 +88,5 @@ print("Waiting for dashboard to relay config file... ")
 --- Keep emulator running until the dashboard sends the config file
 while not config do
     dashboard_poll()
-
-    if _EMU == "BizHawk" then
-        emu.yield() -- Allows BizHawk to connect even while the game is paused
-    else
-        emu.frameadvance()
-    end
+    emu.frameadvance()
 end
