@@ -48,6 +48,7 @@
                                 <option value="primo_gift">Primo Gift Eggs</option>
                                 <option value="roamers">Roamers</option>
 								<option value="hgss_roamers">Burned Tower Shiny Hunt</option>
+								<option value="rock_smash">Rock Smash</option>
                             </optgroup>
                             <optgroup label="Standard">
                                 <option value="random_encounters">Random Encounters</option>
@@ -122,6 +123,33 @@
                                 </div>
                             </div>
                         </div>
+						<div id="option_hgss_roamers">
+							<br>
+							<label for="hgss_roamers">Target Roamers</label>
+
+							<div id="hgss_roamers">
+								<div class="custom-switch">
+									<input type="checkbox" id="hunt_raikou" checked>
+									<label for="hunt_raikou">Raikou</label>
+								</div>
+								<br>
+								<div class="custom-switch">
+									<input type="checkbox" id="hunt_entei" checked>
+									<label for="hunt_entei">Entei</label>
+								</div>
+							</div>
+
+							<!-- Always-visible advisory warning (no background) -->
+							<div id="roamer_warning" style="
+								margin-top:10px;
+								color:#d9534f;
+								font-weight:bold;
+							">
+								⚠️ Caution: You may enable both roamers, but, it is not recommended.<br>
+								Double‑shiny odds are <span style="font-weight:bold;"><u>1 in 66,000,000</u>. </span><br>
+								If you actually hit this… catch them, then go buy a lottery ticket.
+							</div>
+						</div>
                         <div id="option_primo">
                             <br>
                             <label for="words">Secret Phrases</label>
@@ -223,7 +251,7 @@
                             <input type="checkbox" id="focus_mode">
                             <label for="focus_mode">Focus mode
                                 <i class="fa fa-info-circle" id="tooltip-icon" aria-describedby="tooltip"></i>
-                                <div id="tooltip" role="tooltip">Disables video and sound output on the emulator while active to speed up emulation. Boosts efficiency by 2x-3x in DeSmuME, less effective on BizHawk. 
+                                <div id="tooltip" role="tooltip">Disables video and sound output on the emulator while active to speed up emulation. Boosts efficiency by 2x-3x. 
                                     <div id="arrow" data-popper-arrow></div>
                                 </div>
                             </label>
