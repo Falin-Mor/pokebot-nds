@@ -950,7 +950,7 @@ function mode_rock_smash()
     wait_frames(TIMEOUT)
 
     if not game_state.in_battle then
-        print_debug("[Rock Smash] No battle. Resetting...")
+        print("Not a battle. Resetting...")
         soft_reset()
         wait_frames(300)
         return
