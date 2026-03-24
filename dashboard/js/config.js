@@ -69,6 +69,7 @@ function updateOptionVisibility() {
     $('#option_primo').hide();
     $('#option_grotto').hide();
     $('#option_ot_override').hide();
+	$('#option_hgss_roamers').hide();
 
     const mode = $('#mode').val();
 
@@ -89,6 +90,9 @@ function updateOptionVisibility() {
             $('#option_moving_encounters').show();
             $('#option_grotto').show();
             break;
+		case 'hgss_roamers':
+			$('#option_hgss_roamers').show();
+			break;
         case 'primo_gift':
             $('#option_primo').show();
 
