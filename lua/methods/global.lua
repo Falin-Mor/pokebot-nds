@@ -936,139 +936,40 @@ end
     end
 end
 
----------------------------------------------------------------------
--- MODE: ROCK SMASH
--- Automates Rock Smash encounters using Pokebot's built-in
--- encounter engine (process_wild_encounter).
---
--- Loop:
---   1. Tap A on rock
---   2. Confirm Rock Smash
---   3. Wait for event:
---        - Battle → process_wild_encounter()
---        - Item / Nothing → reset
---   4. Soft reset → reload save → repeat
----------------------------------------------------------------------
-
 function mode_rock_smash()
 
-    ---------------------------------------------------------------
-    -- Internal Bot State
-    ---------------------------------------------------------------
-    bot = bot or {
-        phase = "smash",
-        timer = 0,
-    }
-
-    ---------------------------------------------------------------
-    -- Phase: Initiate Rock Smash
-    -- Tap A on the rock to trigger the prompt.
-    ---------------------------------------------------------------
-    local function phase_smash()
+    press_button("A")
+    wait_frames(5)
+	
+	for i = 1, 60 do   
         press_button("A")
-        bot.phase = "confirm"
-        bot.timer = 0
-        print_debug("[Rock Smash] Initiating...")
+        wait_frames(1)
     end
+	
+    local TIMEOUT = 420
+    wait_frames(TIMEOUT)
 
-    ---------------------------------------------------------------
-    -- Phase: Confirm Rock Smash
-    -- Spam A to confirm the Rock Smash prompt.
-    ---------------------------------------------------------------
-    local function phase_confirm()
-        bot.timer = bot.timer + 1
-
-        press_button("A")
-
-        -- After ~40 frames, the animation or event begins
-        if bot.timer >= 40 then
-            bot.phase = "wait_event"
-            bot.timer = 0
-            print_debug("[Rock Smash] Waiting for result...")
-        end
-    end
-
-    ---------------------------------------------------------------
-    -- Phase: Wait for Event
-    -- Three possible outcomes:
-    --   1. Battle starts → handle via encounter engine
-    --   2. Item found → reset
-    --   3. Nothing happens → reset
-    ---------------------------------------------------------------
-    local function phase_wait_event()
-        bot.timer = bot.timer + 1
-
-        -- Progress text for item or "nothing happened"
-        progress_text()
-
-        -- Detect battle start
-        if game_state.in_battle then
-            print_debug("[Rock Smash] Battle detected!")
-            bot.phase = "handle_battle"
-            return
-        end
-
-        -- Timeout → item or nothing
-        if bot.timer >= 120 then
-            print_debug("[Rock Smash] No battle (item or nothing). Resetting...")
-            bot.phase = "reset"
-            bot.timer = 0
-        end
-    end
-
-    ---------------------------------------------------------------
-    -- Phase: Handle Battle
-    -- Delegates everything to Pokebot's encounter engine:
-    --   - shiny detection
-    --   - logging
-    --   - target rules
-    --   - flee/catch logic
-    ---------------------------------------------------------------
-    local function phase_handle_battle()
-        process_wild_encounter()
-
-        -- When battle ends, reset
-        if not game_state.in_battle then
-            bot.phase = "reset"
-            bot.timer = 0
-        end
-    end
-
-    ---------------------------------------------------------------
-    -- Phase: Reset
-    -- Soft reset → reload save → return to smash phase.
-    ---------------------------------------------------------------
-    local function phase_reset()
-        wait_frames(math.random(0, 45)) -- jitter to break seed loops
-
-        print_debug("[Rock Smash] Soft resetting...")
+    if not game_state.in_battle then
+        print_debug("[Rock Smash] No battle. Resetting...")
         soft_reset()
-
-        -- Wait for game to load
         wait_frames(300)
-
-        -- Spam A to load save
-        for i = 1, 40 do
-            progress_text()
-        end
-
-        print_debug("[Rock Smash] Restarting loop.")
-        bot.phase = "smash"
-        bot.timer = 0
+        return
     end
 
-    ---------------------------------------------------------------
-    -- Dispatcher
-    ---------------------------------------------------------------
-    if bot.phase == "smash" then
-        phase_smash()
-    elseif bot.phase == "confirm" then
-        phase_confirm()
-    elseif bot.phase == "wait_event" then
-        phase_wait_event()
-    elseif bot.phase == "handle_battle" then
-        phase_handle_battle()
-    elseif bot.phase == "reset" then
-        phase_reset()
+    local mon = foe[1]
+    local is_target = pokemon.log_encounter(mon)
+
+    if is_target then
+        if config.auto_catch then
+            while game_state.in_battle do
+                catch_pokemon()
+            end
+            abort("Target " .. mon.name .. " was caught!")
+        else
+            abort(mon.name .. " is a target!")
+        end
+    else
+        print(mon.name .. " was not a target, resetting...")
+        soft_reset()
     end
 end

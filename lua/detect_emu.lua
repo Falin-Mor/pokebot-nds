@@ -34,8 +34,9 @@ end
 
 -- Universal pseudo-hard reset
 function hard_reset()
-    print("Performing pseudo-hard reset...")
-    wait_frames(math.random(300, 800))
+    print_debug("Performing pseudo-hard reset...")
+    wait_frames(3)
+	save_game()
     soft_reset()
     wait_frames(60)
 end
