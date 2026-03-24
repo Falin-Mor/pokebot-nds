@@ -44,6 +44,14 @@ class Header extends HTMLElement {
                             </button>
                         </a>
                     </li>
+					<li class="nav-item nav-link px-10">
+                        <a href="https://ko-fi.com/falinmor_" target="_blank">
+                            <button type="button" class="btn position-relative px-10">
+                                <i class="fa-solid fa-heart"></i>
+                                Donate
+                            </button>
+                        </a>
+                    </li>
                 </ul>
                 <div style="position: absolute; right: 15px; display: flex;">
                     <div class="text-center mx-5">
