@@ -30,7 +30,7 @@ function sendConfig() {
         socketServerSend('config',
             {
                 config: config,
-                game: $('#editing').val()
+                game: "all"
             },
             function (error, _) {
                 return error;

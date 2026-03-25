@@ -76,7 +76,11 @@ const configTemplate = {
     tid_override: "00000",
     sid_override: "00000",
     encounter_milestones_enable: false,
-    encounter_milestones_interval: 500
+    encounter_milestones_interval: 500,
+	focus_mode: false,
+	HighLowIV: false,
+	hunt_raikou: false,
+	hunt_entei: false
 }
 
 const statsTemplate = {
@@ -137,7 +141,7 @@ if (config.show_status) {
                 instance: false,
                 buttons: [new ButtonBuilder()
                     .setLabel('View on GitHub')
-                    .setURL('https://github.com/wyanido/pokebot-nds')
+                    .setURL('https://github.com/Falin-Mor/pokebot-nds')
                     .setStyle(ButtonStyle.Link)
                 ]
             }
