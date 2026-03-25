@@ -401,6 +401,7 @@ function process_wild_encounter()
     end
 
     if config.pickup then
+		wait_frames(100)
         do_pickup()
     end
 end
@@ -439,7 +440,7 @@ function save_game()
     print("Saving game...")
     
     open_menu("Save")
-    press_sequence("A", 90, "A", 900)
+    press_sequence("A", 90, "A", 960)
     press_sequence("B", 10)
 end
 
