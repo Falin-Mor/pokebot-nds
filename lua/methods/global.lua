@@ -401,7 +401,6 @@ function process_wild_encounter()
     end
 
     if config.pickup then
-		wait_frames(100)
         do_pickup()
     end
 end
@@ -417,7 +416,8 @@ function do_pickup()
     end
 
     if item_count >= tonumber(config.pickup_threshold) then
-        open_menu("Pokemon")
+        wait_frames(100)
+		open_menu("Pokemon")
 
         for _, mon in ipairs(party) do
             if mon.ability == "Pickup" and mon.heldItem ~= "none" then
