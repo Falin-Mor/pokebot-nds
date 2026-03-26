@@ -465,15 +465,11 @@ function battle_foe()
         if not get_battle_state() then -- Battle finished, back in the overworld
             return
         elseif get_battle_state() == "New Move" then -- These cases are annoying and require specific inputs to cancel
-            press_sequence(120, "B", 80, "B", 20, "B", 80, "B", 80, "B", 80)           
-			touch_screen_at(125, 115)
-            wait_frames(100)
-            press_button("B")
-            wait_frames(100)
-            touch_screen_at(125, 65)
-            wait_frames(60)
-            press_button("A")
-            wait_frames(120)
+            if not first_run_done then
+			press_sequence(120, "B", 80, "B", 20, "B", 80)
+			first_run_done = true
+			end
+			press_sequence("B", 80, "B", 80, "B", 100, "B", 100, "A", 60, "A", 120)           
             return
         end
     end
