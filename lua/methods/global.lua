@@ -465,8 +465,8 @@ function battle_foe()
         if not get_battle_state() then -- Battle finished, back in the overworld
             return
         elseif get_battle_state() == "New Move" then -- These cases are annoying and require specific inputs to cancel
-            wait_frames(30)
-            touch_screen_at(125, 115)
+            press_sequence(120, "B", 80, "B", 20, "B", 80, "B", 80, "B", 80)           
+			touch_screen_at(125, 115)
             wait_frames(100)
             press_button("B")
             wait_frames(100)
@@ -528,7 +528,8 @@ function check_party_status()
         end
 
         print("Next replacement is " .. party[replacement].name .. " (Slot " .. replacement .. ")")
-        open_menu("Pokemon")
+        wait_frames(100)
+		open_menu("Pokemon")
         
         -- Highlight lead
         local i = 1

@@ -7,7 +7,7 @@
 function update_pointers()
     local anchor = mdword(0x21C0794 + _ROM.offset)
 	local foe_anchor = mdword(anchor + 0x217A8)
-    
+
 	pointers = {
         start_value = 0x2101008, -- 0 until save has been loaded
 		party_count = anchor + 0xB0,
@@ -32,7 +32,8 @@ function update_pointers()
         starters_ready   = anchor + 0x418D4,
 
 		battle_menu_state      = anchor + 0x44878, -- 01 is FIGHT menu, 04 is Move Select, 08 is Bag,
-		battle_menu_state2     = anchor + 0x7E282,
+		battle_menu_state2 = anchor + 0xED6A6,
+
 		battle_indicator       = 0x021D18F2 + _ROM.offset,
         fishing_bite_indicator = 0x021CF636 + _ROM.offset,
 

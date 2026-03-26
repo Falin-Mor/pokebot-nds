@@ -254,9 +254,10 @@ function get_battle_state()
         return nil
     end
 
-    if mbyte(pointers.battle_menu_state2) == 0x2F then
-        return "New Move"
-    end
+	local s = mbyte(pointers.battle_menu_state2)
+	if s == 0x2F or s == 0x2E then
+		return "New Move"
+	end
     
     local state = mbyte(pointers.battle_menu_state)
 
