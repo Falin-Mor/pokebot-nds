@@ -366,6 +366,92 @@ function pokemon.log_encounter(mon)
     return is_target
 end
 
+function get_pp_scan_range()
+    if _ROM.version == "D" or _ROM.version == "P" then
+        return 0x022B5000, 0x022B9000  -- Diamond/Pearl
+    else
+        return 0x022C5000, 0x022C8000  -- Platinum + HGSS
+    end
+end
+
+PP_BASE = PP_BASE or 0
+
+function find_pp_block()
+    if PP_BASE ~= 0 then
+        return PP_BASE
+    end
+
+    local lead = get_lead_mon_index()
+    local mon = party[lead]
+    if not mon or not mon.pp then return nil end
+
+    local p1, p2, p3, p4 = mon.pp[1], mon.pp[2], mon.pp[3], mon.pp[4]
+
+    local START, END = get_pp_scan_range()
+    if not START then return nil end
+
+    for addr = START, END do
+        if memory.readbyte(addr)     == p1 and
+           memory.readbyte(addr + 1) == p2 and
+           memory.readbyte(addr + 2) == p3 and
+           memory.readbyte(addr + 3) == p4 then
+
+            PP_BASE = addr
+            print(string.format("PP block found and cached at 0x%08X", PP_BASE))
+            return addr
+        end
+    end
+
+    return nil
+end
+
+function find_pp_block_gen5()
+    local lead = get_lead_mon_index()
+    local mon = party[lead]
+    if not mon or not mon.pp then return nil end
+
+	local p1, p2, p3, p4 = mon.pp[1], mon.pp[2], mon.pp[3], mon.pp[4]
+
+    local START = 0x0226D000
+    local END   = 0x02270000
+
+    for addr = START, END do
+        if memory.readbyte(addr)     == p1 and
+           memory.readbyte(addr + 14) == p2 and
+           memory.readbyte(addr + 28) == p3 and
+           memory.readbyte(addr + 42) == p4 then
+
+            PP_BASE = addr
+            print(string.format("PP block found and cached at 0x%08X", PP_BASE))
+            return addr
+        end
+    end
+
+    return nil
+end
+
+local GEN5_PP_BASES = {
+    B  = 0x0226D7C6,
+    W  = 0x0226D7CA,
+    B2 = 0x0225B2EA,
+    W2 = 0x0225B32A,
+}
+
+function get_live_pp(move_index, ally)
+    ally = ally or party[get_lead_mon_index()]
+
+    if _ROM.gen == 5 then
+        local base = GEN5_PP_BASES[_ROM.version]
+        local offset = (move_index - 1) * 14
+        return memory.readbyte(base + offset)
+    end
+
+    -- Gen 4 fallback
+    local base = PP_BASE ~= 0 and PP_BASE or find_pp_block()
+    if not base then return ally.pp[move_index] end
+    return memory.readbyte(base + (move_index - 1))
+end
+
 --- Returns the index of the most suitable move for KO-ing the target
 function pokemon.find_best_attacking_move(ally, foe)
     local max_power_index = 1
@@ -378,9 +464,17 @@ function pokemon.find_best_attacking_move(ally, foe)
         if config.thief_wild_items and move.name == "Thief" then
             power = nil
         end
+	
+		-- Don't use False Swipe unless subduing OR foe is a target
+		if move.name == "False Swipe" then
+			if not config.subdue_target and not is_target then
+				power = nil
+			end
+		end
 
         -- Only check damaging moves with PP remaining
-        if ally.pp[i] ~= 0 and power ~= nil then
+		local live_pp = get_live_pp(i)
+		if live_pp and live_pp > 0 and power ~= nil then
             local type_matchup = _TYPE[move.type]
 
             -- Calculate effectiveness against foe's type(s)
@@ -545,6 +639,40 @@ end
 --- Returns whether a Pokemon is both newly hatched and not a target
 function pokemon.is_hatched_dud(mon)
     return mon.level == 1 and not pokemon.matches_ruleset(mon, config.target_traits)
+end
+
+function debug_print_pp()
+    print_debug("=== PP DEBUG ===")
+
+    if _ROM.gen == 5 then
+        local base = GEN5_PP_BASES[_ROM.version]
+        print_debug(string.format("Gen 5 PP Block @ 0x%08X", base))
+
+        for i = 0, 3 do
+            local offset = i * 14
+            print_debug(string.format(
+                "Move %d PP = %d",
+                i + 1,
+                memory.readbyte(base + offset)
+            ))
+        end
+
+        print_debug("=== END ===")
+        return
+    end
+
+    -- Gen 4
+    local base = PP_BASE ~= 0 and PP_BASE or find_pp_block()
+    if not base then
+        print_debug("PP block not found!")
+        return
+    end
+
+    print_debug(string.format("Gen 4 PP Block @ 0x%08X", base))
+    for i = 0, 3 do
+        print_debug(string.format("Move %d PP = %d", i+1, memory.readbyte(base + i)))
+    end
+    print_debug("=== END ===")
 end
 
 return pokemon

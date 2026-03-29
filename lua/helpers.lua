@@ -34,7 +34,6 @@ function update_party()
                     party_was_updated = true
                 else
                     print_debug("Party checksum failed at slot " .. i)
-					wait_frames(3)
                 end
             end
         else

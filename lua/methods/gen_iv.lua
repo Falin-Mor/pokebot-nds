@@ -42,7 +42,7 @@ function update_pointers()
         
         battle_bag_page        = bag_page_anchor + 0x4E,
         battle_menu_state      = anchor + 0x455A6,
-        battle_menu_state2     = anchor - 0xD3FC,
+        battle_menu_state2 = anchor + 0xED6A6,
         battle_indicator       = 0x21A1B2A + _ROM.offset,
 
         trainer_name = anchor - 0x22,
@@ -94,7 +94,9 @@ end
 
 --- Returns an array of all Poke Balls within the Poke Balls bag pocket
 function get_usable_balls()
-    local balls = {}
+    process_frame()      -- updates game_state
+	update_pointers()    -- builds pointer table
+	local balls = {}
     local slot = 0
 
     for i = pointers.poke_balls_pocket, pointers.poke_balls_pocket + 0x3A, 4 do

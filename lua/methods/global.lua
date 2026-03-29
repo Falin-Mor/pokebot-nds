@@ -234,6 +234,25 @@ function subdue_pokemon()
     end
 end
 
+function should_fight_foe()
+    local annoying_moves = {
+        "Disable", "Torment", "Imprison", "Encore", "Taunt", "Attract",
+        "Protect", "Detect", "Substitute", "Confuse Ray", "Hypnosis",
+        "Sleep Powder", "Spore", "Yawn", "Swagger", "Thunder Wave",
+        "Will-O-Wisp", "Leech Seed", "Mean Look", "Block",
+        "Destiny Bond", "Bide"
+    }
+
+    for _, move in ipairs(annoying_moves) do
+        if pokemon.get_move_slot(foe[1], move) ~= 0 then
+            print_warn("Foe knows an annoying move: " .. move .. ". Running.")
+            return false
+        end
+    end
+
+    return true
+end
+
 --- Continuously tries to catch the foe until the battle ends, or there are no valid Poke Balls left
 function catch_pokemon()
     local function get_preferred_ball(balls)
@@ -373,6 +392,12 @@ function process_wild_encounter()
                 print("Won't battle two targets at once. Fleeing!")
                 flee_battle()
             else
+				
+				if not should_fight_foe() then
+					flee_battle()
+					return
+				end
+				
                 -- Thief wild items (previously do_thief)
                 local lead = get_lead_mon_index()
                 local thief_slot = pokemon.get_move_slot(party[lead], "Thief")
@@ -441,7 +466,7 @@ function save_game()
     
     open_menu("Save")
     press_sequence("A", 90, "A", 960)
-    press_sequence("B", 10)
+    press_sequence("B", 10, "B", 10)
 end
 
 -- Selects a move on the FIGHT menu
@@ -457,32 +482,47 @@ function use_move(id)
     wait_frames(60)
 end
 
---- Attemps to KO the current foe
-function battle_foe()
-    while get_battle_state() ~= "Menu" do
-        press_sequence("B", 5) -- Also cancels evolutions
-
-        if not get_battle_state() then -- Battle finished, back in the overworld
-            return
-        elseif get_battle_state() == "New Move" then -- These cases are annoying and require specific inputs to cancel
-            if not first_run_done then
-			press_sequence(120, "B", 80, "B", 20, "B", 80)
-			first_run_done = true
-			end
-			press_sequence("B", 80, "B", 80, "B", 100, "B", 100, "A", 60, "A", 120)           
-            return
-        end
+local function advance_battle_ui()
+    -- Loop until battle ends or Fight menu returns
+    while game_state.in_battle and get_battle_state() ~= "Menu" do
+	progress_text()
+	wait_frames(5)
+	progress_text_B()
+	wait_frames(5)
+	progress_text_B()
+	wait_frames(5)
     end
-    
+end
+
+
+function battle_foe()
+    -- Wait for the Fight menu
+    while get_battle_state() ~= "Menu" do
+        if not game_state.in_battle then return end
+			progress_text()
+    end
+
+    -- Pick the best move
     local best_move = pokemon.find_best_attacking_move(party[get_lead_mon_index()], foe[1])
-    
+
     if best_move.power > 0 then
+        debug_print_pp()
         print_debug("Best move is " .. best_move.name .. " (Avg Power: " .. best_move.power .. ")")
         use_move(best_move.index)
     else
         print("Lead Pokemon has no valid moves left to battle! Fleeing...")
         flee_battle()
+        return
     end
+
+    -- Wait for Fight menu to disappear (move selected)
+    while get_battle_state() == "Menu" do
+        if not game_state.in_battle then return end
+        wait_frames(1)
+    end
+
+    -- Now it's safe to tap through everything
+    advance_battle_ui()
 end
 
 --- Manages the party between battles to make sure the bot can proceed with its task
@@ -496,7 +536,7 @@ function check_party_status()
             end
         end
 
-        return mon.currentHP > mon.maxHP / 5 and pp > 3 and not mon.isEgg
+        return mon.currentHP > mon.maxHP / 4 and pp > 0 and not mon.isEgg
     end
 
     if #party == 0 or game_state.in_battle then -- Don't check party status if bot was started during a battle
