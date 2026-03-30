@@ -243,25 +243,65 @@ function should_fight_foe()
         "Destiny Bond", "Bide"
     }
 
-    for _, move in ipairs(annoying_moves) do
-        if pokemon.get_move_slot(foe[1], move) ~= 0 then
-            print_warn("Foe knows an annoying move: " .. move .. ". Running.")
-            return false
-        end
-    end
+	for _, move in ipairs(annoying_moves) do
+		if pokemon.get_move_slot(foe[1], move) ~= 0 then
+			
+			if config.battle_non_targets then
+				print_debug("Foe knows an annoying move: " .. move .. ". Running.")
+			end
+			
+			return false
+		end
+	end
 
     return true
 end
 
 --- Continuously tries to catch the foe until the battle ends, or there are no valid Poke Balls left
 function catch_pokemon()
+
+    --------------------------------------------------------------------
+    -- Shared helper: force battle menu to main state
+    --------------------------------------------------------------------
+    local function normalize_battle_menu()
+        while mbyte(pointers.battle_menu_state) ~= 1 do
+            press_sequence("B", 8)
+        end
+        wait_frames(20)
+    end
+
+    --------------------------------------------------------------------
+    -- PLATINUM‑ONLY: Always use slot 1, page 0
+    --------------------------------------------------------------------
+    local function use_platinum_slot1()
+        -- Open BAG
+        touch_screen_at(38, 174)
+        wait_frames(90)
+
+        -- Open BALLS pocket
+        touch_screen_at(192, 36)
+        wait_frames(90)
+
+        -- Slot 1 coordinates (DP/PT stable)
+        local x = 80
+        local y = 30
+
+        touch_screen_at(x, y)
+        wait_frames(30)
+
+        -- USE
+        touch_screen_at(108, 176)
+    end
+
+    --------------------------------------------------------------------
+    -- DEFAULT (non‑Platinum): your full preferred‑ball logic
+    --------------------------------------------------------------------
     local function get_preferred_ball(balls)
         -- Compare with override ruleset first
         if config.pokeball_override then
             for ball, _ in pairs(config.pokeball_override) do
                 if pokemon.matches_ruleset(foe[1], config.pokeball_override[ball]) then
                     local index = balls[string.lower(ball)]
-
                     if index then
                         print_debug("Bot will use " .. ball .. " from slot " .. ((index - 1) % 6) .. ", page " .. math.floor(index / 6))
                         return index
@@ -274,7 +314,6 @@ function catch_pokemon()
         if config.pokeball_priority then
             for _, ball in ipairs(config.pokeball_priority) do
                 local index = balls[string.lower(ball)]
-
                 if index then
                     print_debug("Bot will use " .. ball .. " from slot " .. ((index - 1) % 6) .. ", page " .. math.floor(index / 6))
                     return index
@@ -288,8 +327,9 @@ function catch_pokemon()
     local function use_ball(index)
         local page = math.floor((index - 1) / 6)
         local current_page = mbyte(pointers.battle_bag_page)
-	
-        while current_page ~= page do -- Scroll to page with ball
+
+        -- Scroll to correct page
+        while current_page ~= page do
             if current_page < page then
                 touch_screen_at(58, 180)
                 current_page = current_page + 1
@@ -297,59 +337,80 @@ function catch_pokemon()
                 touch_screen_at(17, 180)
                 current_page = current_page - 1
             end
-
             wait_frames(30)
         end
 
         -- Select and use ball
         local button = (index - 1) % 6 + 1
         local x = 80 * ((button - 1) % 2 + 1)
-		-- Normalize ONLY for BW/B2/W/W2 (these games use 1-based page indexing)
-		if GAME == "B" or GAME == "W" or GAME == "B2" or GAME == "W2" then
-        x = 80 * ((button - 1) % 2)
-		end		
+
+        -- Normalize for BW/B2/W2 (1‑based page indexing)
+        if GAME == "B" or GAME == "W" or GAME == "B2" or GAME == "W2" then
+            x = 80 * ((button - 1) % 2)
+        end
+
         local y = 30 + 50 * math.floor((button - 1) / 2)
+
         touch_screen_at(x, y)
         wait_frames(30)
-        touch_screen_at(108, 176) -- USE
+        touch_screen_at(108, 176)
     end
 
-    if config.subdue_target then 
+    --------------------------------------------------------------------
+    -- Optional subdue logic
+    --------------------------------------------------------------------
+    if config.subdue_target then
         subdue_pokemon()
     end
 
+    --------------------------------------------------------------------
+    -- Main catch loop
+    --------------------------------------------------------------------
     while game_state.in_battle do
-        local balls = get_usable_balls()
-        local ball_index = get_preferred_ball(balls)
-        
-        if ball_index == -1 then
-            abort("No valid Poke Balls to catch the target with")
+        normalize_battle_menu()
+
+        ----------------------------------------------------------------
+        -- PLATINUM BRANCH
+        ----------------------------------------------------------------
+        if GAME == "PL" or GAME == "Pt" or GAME == "PLATINUM" then
+            use_platinum_slot1()
+
+        ----------------------------------------------------------------
+        -- DEFAULT BRANCH (DP/HGSS/BW/etc.)
+        ----------------------------------------------------------------
+        else
+            local balls = get_usable_balls()
+            local ball_index = get_preferred_ball(balls)
+
+            if ball_index == -1 then
+                abort("No valid Poke Balls to catch the target with")
+            end
+
+            -- Open BAG
+            touch_screen_at(38, 174)
+            wait_frames(90)
+
+            -- Open BALLS pocket
+            touch_screen_at(192, 36)
+            wait_frames(90)
+
+            use_ball(ball_index)
         end
 
-        while mbyte(pointers.battle_menu_state) ~= 1 do
-            press_sequence("B", 8)
-        end
-
-        wait_frames(20)
-
-        touch_screen_at(38, 174)
-        wait_frames(90)
-
-        touch_screen_at(192, 36)
-        wait_frames(90)
-
-        use_ball(ball_index)
-
-        -- Wait until catch failed or battle ended
+        ----------------------------------------------------------------
+        -- Wait until catch fails or battle ends
+        ----------------------------------------------------------------
         while mbyte(pointers.battle_menu_state) ~= 1 and game_state.in_battle do
             press_sequence("B", 8)
-            touch_screen_at(0, 0) -- Skip Pokedex entry screen in HGSS without pressing A to avoid accidental menu inputs 
+            touch_screen_at(0, 0) -- HGSS Pokedex skip safety
         end
     end
 
+    --------------------------------------------------------------------
+    -- Post‑battle dialogue skip
+    --------------------------------------------------------------------
     print("Skipping through all post-battle dialogue... (This may take a few seconds)")
-
-    for i = 0, 59, 1 do
+    for i = 0, 59 do
         press_sequence("B", 10)
     end
 
@@ -357,6 +418,7 @@ function catch_pokemon()
         save_game()
     end
 end
+
 
 --- Logs the current wild foes and decides the next actions to take
 function process_wild_encounter()
