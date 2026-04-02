@@ -397,7 +397,7 @@ function find_pp_block()
            memory.readbyte(addr + 3) == p4 then
 
             PP_BASE = addr
-            print(string.format("PP block found and cached at 0x%08X", PP_BASE))
+            print_debug(string.format("PP block found and cached at 0x%08X", PP_BASE))
             return addr
         end
     end

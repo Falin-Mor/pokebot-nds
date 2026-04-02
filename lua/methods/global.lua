@@ -260,6 +260,11 @@ end
 --- Continuously tries to catch the foe until the battle ends, or there are no valid Poke Balls left
 function catch_pokemon()
     local function get_preferred_ball(balls)
+		local priority = config.pokeball_priority
+		if not priority or #priority == 0 then
+			priority = { "Ultra Ball", "Great Ball", "Poke Ball" }
+			print_debug("Poké Ball priority empty — falling back to default priority list")
+		end
         -- Compare with override ruleset first
         if config.pokeball_override then
             for ball, _ in pairs(config.pokeball_override) do
@@ -469,8 +474,8 @@ function save_game()
     print("Saving game...")
     
     open_menu("Save")
-    press_sequence("A", 90, "A", 960)
-    press_sequence("B", 10, "B", 10)
+    press_sequence("A", 90, "A", 900)
+    press_sequence("B", 60, "B", 10)
 end
 
 -- Selects a move on the FIGHT menu
@@ -486,25 +491,62 @@ function use_move(id)
     wait_frames(60)
 end
 
+local function stop_advancing()
+    return (not game_state.in_battle) or (get_battle_state() == "Menu")
+end
+
 local function advance_battle_ui()
-    -- Loop until battle ends or Fight menu returns
-    while game_state.in_battle and get_battle_state() ~= "Menu" do
-	progress_text()
-	wait_frames(5)
-	progress_text_B()
-	wait_frames(5)
-	progress_text_B()
-	wait_frames(5)
+    while not stop_advancing() do
+
+        -- Mash B
+        for i = 1, 40 do
+            press_button("B")
+            wait_frames(6)
+            if stop_advancing() then return end
+        end
+
+        -- Wait for level-up screen
+        for i = 1, 320 do
+            wait_frames(1)
+            if stop_advancing() then return end
+        end		
+		
+        -- Tap top screen
+        for i = 1, 10 do
+            touch_screen_at(130, 5)
+            wait_frames(20)
+            if stop_advancing() then return end
+        end
+		
+		print("Please wait... New Move may be detected.")
+		
+		-- Tap top screen
+        for i = 1, 10 do
+            touch_screen_at(130, 5)
+            wait_frames(20)
+            if stop_advancing() then return end
+        end
+		
+        -- Final taps
+		if GAME == "B" or GAME == "W" or GAME == "B2" or GAME == "W2" then
+			touch_screen_at(130, 100)
+		else
+			touch_screen_at(130, 130)
+		end
+
+        wait_frames(60)
+  
+		for i = 1, 8 do
+            touch_screen_at(130, 70)
+            wait_frames(40)
+			if stop_advancing() then return end
+        end
     end
 end
 
-
 function battle_foe()
     -- Wait for the Fight menu
-    while get_battle_state() ~= "Menu" do
-        if not game_state.in_battle then return end
-			progress_text()
-    end
+	advance_battle_ui()
 
     -- Pick the best move
     local best_move = pokemon.find_best_attacking_move(party[get_lead_mon_index()], foe[1])
@@ -525,7 +567,7 @@ function battle_foe()
         wait_frames(1)
     end
 
-    -- Now it's safe to tap through everything
+    -- Tap through everything
     advance_battle_ui()
 end
 

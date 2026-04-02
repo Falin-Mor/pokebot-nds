@@ -32,11 +32,11 @@ local function find_save_anchor_from_runtime_tid(runtime_anchor)
 
             -- 4. One-time debug sanity print
             if not printed_tid_debug then
-                print(string.format(
+                print_debug(string.format(
                     "[PT] Auto-anchor OK: runtime TID %d found at %08X → save_anchor %08X",
                     tid, addr, save_anchor
                 ))
-                print(string.format("anchor = %08X", mdword(0x21C0794 + _ROM.offset)))
+                print_debug(string.format("anchor = %08X", mdword(0x21C0794 + _ROM.offset)))
 				printed_tid_debug = true
             end
 
