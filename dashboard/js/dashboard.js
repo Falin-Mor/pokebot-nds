@@ -215,17 +215,107 @@ function refreshPokemonList(log, targetEle, targetsLength) {
         targetEle.append(row)
     }
 }
+// === FORME NAME MAPPING ===
+// Maps species → altForm → readable name
+const FORME_NAMES = {
+    // Unown A–Z, !, ?
+    201: {
+        1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F",
+        7: "G", 8: "H", 9: "I", 10: "J", 11: "K", 12: "L",
+        13: "M", 14: "N", 15: "O", 16: "P", 17: "Q", 18: "R",
+        19: "S", 20: "T", 21: "U", 22: "V", 23: "W", 24: "X",
+        25: "Y", 26: "Z", 27: "!", 28: "?"
+    },
+
+    // Shellos / Gastrodon
+    422: { 1: "West", 2: "East" },
+    423: { 1: "West", 2: "East" },
+
+    // Burmy / Wormadam
+    412: { 1: "Plant", 2: "Sandy", 3: "Trash" },
+    413: { 1: "Plant", 2: "Sandy", 3: "Trash" },
+
+    // Cherrim
+    421: { 1: "Overcast", 2: "Sunshine" },
+
+    // Rotom
+    479: { 1: "Heat", 2: "Wash", 3: "Frost", 4: "Fan", 5: "Mow" },
+
+    // Giratina
+    487: { 1: "Altered", 2: "Origin" },
+
+    // Shaymin
+    492: { 1: "Land", 2: "Sky" },
+
+    // Deoxys
+    386: { 1: "Normal", 2: "Attack", 3: "Defense", 4: "Speed" },
+	
+	// Basculin
+    550: { 1: "Red-Striped", 2: "Blue-Striped"},
+
+    // Deerling
+    585: { 1: "Spring", 2: "Summer", 3: "Autumn", 4: "Winter" },
+
+    // Sawsbuck
+    586: { 1: "Spring", 2: "Summer", 3: "Autumn", 4: "Winter" },
+
+    // Tornadus
+    641: { 1: "Incarnate", 2: "Therian" },
+
+    // Thundurus
+    642: { 1: "Incarnate", 2: "Therian" },
+
+    // Landorus
+    645: { 1: "Incarnate", 2: "Therian" },
+
+    // Kyurem
+    646: { 1: "Normal", 2: "White", 3: "Black" },
+
+    // Keldeo
+    647: { 1: "Ordinary", 2: "Resolute" },
+
+    // Meloetta
+    648: { 1: "Aria", 2: "Pirouette" },
+
+    // Genesect (Drive formes)
+    649: { 1: "Normal", 2: "Douse", 3: "Shock", 4: "Burn", 5: "Chill" }
+	
+};
+
+function getFormeName(species, altForm) {
+    species = Number(species);
+    altForm = Number(altForm);
+
+    // No forme at all → return blank
+    if (altForm === 0) return "";
+
+    // Normalize 0-based altForm to 1-based mapping
+    const key = altForm + 1;
+
+    // If mapping exists → return readable name
+    if (FORME_NAMES[species] && FORME_NAMES[species][key]) {
+        return FORME_NAMES[species][key];
+    }
+
+    // Fallback: show raw number (rare)
+    return altForm.toString();
+}
 
 function enrichFurther(mon) {
     // Fix filenames for display
     const gender = mon.gender.toLowerCase();
-    mon.gender = gender == 'genderless' ? 'none' : gender;
+    // Preserve numeric species for forme lookup
+	const speciesNum = Number(mon.species);
+
+	mon.gender = gender == 'genderless' ? 'none' : gender;
     mon.shiny = (mon.shinyValue < 8 ? '✨ ' : '➖ ');
     mon.species = mon.species.toString().padStart(3, '0');
 
     if (mon.altForm > 0) {
         mon.species = mon.species + '-' + mon.altForm.toString()
     }
+
+	mon.formeName = getFormeName(speciesNum, mon.altForm);
 
     if (mon.isEgg) {
         mon.species = 'egg';

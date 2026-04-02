@@ -376,9 +376,10 @@
                             <br>
                             <label for="pokeball_priority">Poké Ball priority
                                 <i class="fa fa-info-circle" id="tooltip-icon" aria-describedby="tooltip"></i>
-                                <div id="tooltip" role="tooltip">YAML format array. Specifies the preferred Poké Ball
-                                    type to catch a target with, from highest to lowest priority.
-                                    Entries must match an English Poké Ball name. (Without the 'é' accent)
+                                <div id="tooltip" role="tooltip"> Specifies the preferred Poké Balltype to catch a target
+								with, from highest to lowest priority. This must not be empty. Entries must match an 
+								English Poké Ball name. (Without the 'é' accent). Each entry should be '- (name of ball)'
+								(without the 's).
                                     <div id="arrow" data-popper-arrow></div>
                                 </div>
                             </label>
