@@ -13,6 +13,8 @@ Note: Not all things have been personally tested by me and may not work.
 #### Prerequisites
 You'll need to install [node.js](https://nodejs.org/en), and have a recent version of [DeSmuME](https://github.com/TASEmulators/desmume/releases/latest) in order to use this tool. 
 
+Make sure to have DesMuME with the dll in the root of this repo in the root of DesMuME folder.
+
 #### Installation
 **Recommended**: Install [Github Desktop](https://desktop.github.com/) and locally clone this repository to stay up to date with the latest versions of the bot.
 
