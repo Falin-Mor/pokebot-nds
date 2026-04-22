@@ -294,34 +294,50 @@ function catch_pokemon()
         return -1
     end
 
-    local function use_ball(index)
-        local page = math.floor((index - 1) / 6)
-        local current_page = mbyte(pointers.battle_bag_page)
-	
-        while current_page ~= page do -- Scroll to page with ball
-            if current_page < page then
-                touch_screen_at(58, 180)
-                current_page = current_page + 1
-            else
-                touch_screen_at(17, 180)
-                current_page = current_page - 1
-            end
+	local COORDS = {
+		[1] = {x = 60,  y = 35},
+		[2] = {x = 180, y = 35},
+		[3] = {x = 60,  y = 80},
+		[4] = {x = 180, y = 80},
+		[5] = {x = 60,  y = 130},
+		[6] = {x = 180, y = 130},
+	}
 
-            wait_frames(30)
-        end
+	local function get_button(index)
+		local button = (index - 1) % 6 + 1
 
-        -- Select and use ball
-        local button = (index - 1) % 6 + 1
-        local x = 80 * ((button - 1) % 2 + 1)
-		-- Normalize ONLY for BW/B2/W/W2 (these games use 1-based page indexing)
+		-- Gen 5 uses 0-based slot indexing
 		if GAME == "B" or GAME == "W" or GAME == "B2" or GAME == "W2" then
-        x = 80 * ((button - 1) % 2)
-		end		
-        local y = 30 + 50 * math.floor((button - 1) / 2)
-        touch_screen_at(x, y)
-        wait_frames(30)
-        touch_screen_at(108, 176) -- USE
-    end
+			button = button - 1
+			if button == 0 then button = 6 end
+		end
+
+		return button
+	end
+
+	local function use_ball(index)
+		local page = math.floor((index - 1) / 6)
+		local current_page = mbyte(pointers.battle_bag_page)
+
+		while current_page ~= page do
+			if current_page < page then
+				touch_screen_at(58, 180)
+				current_page = current_page + 1
+			else
+				touch_screen_at(17, 180)
+				current_page = current_page - 1
+			end
+			wait_frames(30)
+		end
+
+		local button = get_button(index)
+		local x = COORDS[button].x
+		local y = COORDS[button].y
+
+		touch_screen_at(x, y)
+		wait_frames(30)
+		touch_screen_at(108, 176)
+	end
 
     if config.subdue_target then 
         subdue_pokemon()
