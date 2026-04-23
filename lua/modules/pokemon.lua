@@ -123,9 +123,9 @@ function pokemon.read_data(address, is_raw)
 
     -- Re-calculate checksum of the data blocks and match it with mon.checksum
     -- If there is no match, assume the Pokemon data is garbage or still being written
-    if not verify_checksums(data, checksum) then
-        return nil
-    end
+   -- if not verify_checksums(data, checksum) then
+   --     return nil
+  --  end
 
     -- Party-only status data
     seed = pid
@@ -182,7 +182,7 @@ function pokemon.parse_data(data, enrich)
     mon.speedEV = read_real(0x1B, 1)
     mon.spAttackEV = read_real(0x1C, 1)
     mon.spDefenseEV = read_real(0x1D, 1)
-    -- mon.cool 			 = read_real(0x1E, 1)
+   -- mon.cool 			 = read_real(0x1E, 1)
     -- mon.beauty 			 = read_real(0x1F, 1)
     -- mon.cute 			 = read_real(0x20, 1)
     -- mon.smart 			 = read_real(0x21, 1)
@@ -215,7 +215,16 @@ function pokemon.parse_data(data, enrich)
     mon.spAttackIV = bit.band(bit.rshift(value, 20), 0x1F)
     mon.spDefenseIV = bit.band(bit.rshift(value, 25), 0x1F)
     mon.isEgg = bit.band(bit.rshift(value, 30), 0x01) == 1
-    -- mon.isNicknamed = bit.band(bit.rshift(value, 31), 0x01)
+ 
+	mon.perfectIVs = 0
+		if mon.hpIV == 31 then mon.perfectIVs = mon.perfectIVs + 1 end
+		if mon.attackIV == 31 then mon.perfectIVs = mon.perfectIVs + 1 end
+		if mon.defenseIV == 31 then mon.perfectIVs = mon.perfectIVs + 1 end
+		if mon.spAttackIV == 31 then mon.perfectIVs = mon.perfectIVs + 1 end
+		if mon.spDefenseIV == 31 then mon.perfectIVs = mon.perfectIVs + 1 end
+		if mon.speedIV == 31 then mon.perfectIVs = mon.perfectIVs + 1 end
+
+ -- mon.isNicknamed = bit.band(bit.rshift(value, 31), 0x01)
 
     -- mon.hoennRibbonSet1		= read_real(0x3C, 2)
     -- mon.hoennRibbonSet2		= read_real(0x3E, 2)
@@ -319,7 +328,7 @@ function pokemon.log_encounter(mon)
 
     local key_whitelist = {"pid", "species", "name", "level", "gender", "nature", "heldItem", "hpIV", "attackIV",
                            "defenseIV", "spAttackIV", "spDefenseIV", "speedIV", "shiny", "shinyValue", "ability",
-                           "altForm", "ivSum", "hpType", "hpPower", "isEgg"}
+                           "altForm", "ivSum", "hpType", "hpPower", "isEgg", "perfectIVs"}
 
     for k, v in pairs(mon_new) do
         local allowed = false
