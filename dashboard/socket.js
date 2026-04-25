@@ -92,6 +92,8 @@ const statsTemplate = {
     },
     phase: {
         lowest_sv: '--',
+		lowest_iv_sum: '--',
+		highest_iv_sum: 0,
         seen: 0
     }
 };
@@ -330,6 +332,9 @@ function updateEncounterLog(mon, client) {
     stats.total.max_iv_sum = typeof (stats.total.max_iv_sum) != 'number' ? mon.ivSum : Math.max(mon.ivSum, stats.total.max_iv_sum);
     stats.total.min_iv_sum = typeof (stats.total.min_iv_sum) != 'number' ? mon.ivSum : Math.min(mon.ivSum, stats.total.min_iv_sum);
 
+	stats.phase.highest_iv_sum = typeof stats.phase.highest_iv_sum !== 'number' ? mon.ivSum : Math.max(mon.ivSum, stats.phase.highest_iv_sum);
+	stats.phase.lowest_iv_sum  = typeof stats.phase.lowest_iv_sum  !== 'number' ? mon.ivSum : Math.min(mon.ivSum, stats.phase.lowest_iv_sum);				
+
     if (mon.shiny == true || mon.shinyValue < 8) {
         stats.total.shiny = stats.total.shiny + 1;
     }
@@ -344,6 +349,9 @@ function updateTargetLog(mon, client) {
     // Reset target phase stats
     stats.phase.seen = 0
     stats.phase.lowest_sv = '--'
+	stats.phase.highest_iv_sum = 0;
+	stats.phase.lowest_iv_sum = '--';
+
     stats[`${client.version}_${client.trainer_id}`][mon.name] = 0
 
     writeJSONToFile('../user/target_log.json', targets)
@@ -436,27 +444,66 @@ function webhookTest(url) {
     });
 }
 
+function sendPhaseMilestoneWebhook(client) {
+    const webhookClient = new WebhookClient({ url: config.webhook_url });
+
+    const embed = new EmbedBuilder()
+        .setTitle(`📊 Phase Milestone (${stats.phase.seen} encounters)`)
+        .addFields(
+            { name: "Lowest SV", value: stats.phase.lowest_sv.toString(), inline: true },
+            { name: "Highest IV Sum", value: stats.phase.highest_iv_sum.toString(), inline: true }
+        )
+        .setColor("Gold");
+
+    webhookClient.send({
+        username: 'PokéBot NDS',
+        avatarURL: 'https://i.imgur.com/7tJPLRX.png',
+        embeds: [embed]
+    });
+}
+
+
 function interpretClientMessage(socket, message) {
     const index = clients.indexOf(socket);
     let client = clientData[index];
     let data = message.data;
 
     switch (message.type) {
-        case 'seen':
-            updateEncounterLog(data, client);
+		case 'seen':
+			updateEncounterLog(data, client);
 
-            writeJSONToFile("../user/stats.json", stats);
+			// 🔹 1. Non‑target shiny webhook
+			if (config.webhook_enabled && (data.shiny || data.shinyValue < 8)) {
+				webhookLogPokemon(data, client);
+			}
 
-            if (
-                config.webhook_enabled &&
-                config.encounter_milestones_enable &&
-                stats[`${client.version}_${client.trainer_id}`][data.name] %
-                  config.encounter_milestones_interval ==
-                  0
-              ) {
-                webhookLogPokemon(data, client);
-            }
-            break;
+			// 🔹 2. Phase milestone webhook (8192, 10k, every 5k)
+			const phaseEncounters = stats.phase.seen;
+
+			function shouldPostPhaseMilestone(e) {
+				if (e === 8192) return true;
+				if (e === 10000) return true;
+				if (e > 10000 && e % 5000 === 0) return true;
+				return false;
+			}
+
+			if (config.webhook_enabled && shouldPostPhaseMilestone(phaseEncounters)) {
+				sendPhaseMilestoneWebhook(client);
+			}
+
+			// 🔹 3. Existing species‑based milestone logic (leave this last)
+			if (
+				config.webhook_enabled &&
+				config.encounter_milestones_enable &&
+				stats[`${client.version}_${client.trainer_id}`][data.name] %
+				  config.encounter_milestones_interval ==
+				  0
+			) {
+				webhookLogPokemon(data, client);
+			}
+
+			writeJSONToFile("../user/stats.json", stats);
+			break;
         case 'seen_target':
             if (config.webhook_enabled) {
                 webhookLogPokemon(data, client);
