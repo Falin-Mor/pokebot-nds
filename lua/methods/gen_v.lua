@@ -510,7 +510,7 @@ function release_hatched_duds()
         touch_screen_at(211, 121) -- RELEASE
         wait_frames(30)
         touch_screen_at(220, 110) -- YES
-        press_sequence(60, "B", 20, "B", 20) -- Bye-bye!
+        press_sequence(60, "B", 20, "B", 25) -- Bye-bye!
     end
 
     move_to({x=748}) -- Move to staircase
