@@ -286,19 +286,19 @@ function getFormeName(species, altForm) {
     species = Number(species);
     altForm = Number(altForm);
 
-    // No forme at all → return blank
-    if (altForm === 0) return "";
+    // Species has no forme mapping → always blank
+    if (!FORME_NAMES[species]) return "";
 
     // Normalize 0-based altForm to 1-based mapping
     const key = altForm + 1;
 
     // If mapping exists → return readable name
-    if (FORME_NAMES[species] && FORME_NAMES[species][key]) {
+    if (FORME_NAMES[species][key]) {
         return FORME_NAMES[species][key];
     }
 
-    // Fallback: show raw number (rare)
-    return altForm.toString();
+    // Species has formes but this specific one isn't mapped → blank
+    return "";
 }
 
 function enrichFurther(mon) {
