@@ -203,7 +203,6 @@ function process_frame()
     local party_was_updated = update_party()
     
     if party_was_updated then
-        print_debug("Party updated")
         dashboard_send({
             type = "party",
             data = party

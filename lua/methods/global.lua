@@ -479,7 +479,7 @@ function do_pickup()
             press_sequence("Right", 5)
         end
         
-        press_sequence(30, "B", 120, "B", 60)
+        press_sequence(30, "B", 120, "B", 60, "B", 60)
     else
         print_debug(item_count .. " Pickup items in party. Collecting at " .. config.pickup_threshold)
     end
