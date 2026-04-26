@@ -123,9 +123,9 @@ function pokemon.read_data(address, is_raw)
 
     -- Re-calculate checksum of the data blocks and match it with mon.checksum
     -- If there is no match, assume the Pokemon data is garbage or still being written
-	if not verify_checksums(data, checksum) then
-     return nil
-    end
+	 if not verify_checksums(data, checksum) then
+		 return nil
+	 end
 
     -- Party-only status data
     seed = pid
@@ -415,23 +415,28 @@ function find_pp_block()
 end
 
 function find_pp_block_gen5()
+    if PP_BASE ~= 0 then
+        return PP_BASE
+    end
+
     local lead = get_lead_mon_index()
     local mon = party[lead]
     if not mon or not mon.pp then return nil end
 
-	local p1, p2, p3, p4 = mon.pp[1], mon.pp[2], mon.pp[3], mon.pp[4]
+    local p1, p2, p3, p4 = mon.pp[1], mon.pp[2], mon.pp[3], mon.pp[4]
 
-    local START = 0x0226D000
+    -- Gen 5 WRAM region where PP always lives
+    local START = 0x02250000
     local END   = 0x02270000
 
     for addr = START, END do
-        if memory.readbyte(addr)     == p1 and
-           memory.readbyte(addr + 14) == p2 and
-           memory.readbyte(addr + 28) == p3 and
-           memory.readbyte(addr + 42) == p4 then
+        if memory.readbyte(addr)        == p1 and
+           memory.readbyte(addr + 0x0E) == p2 and
+           memory.readbyte(addr + 0x1C) == p3 and
+           memory.readbyte(addr + 0x2A) == p4 then
 
             PP_BASE = addr
-            print(string.format("PP block found and cached at 0x%08X", PP_BASE))
+            print_debug(string.format("Gen 5 PP block found and cached at 0x%08X", PP_BASE))
             return addr
         end
     end
@@ -439,21 +444,16 @@ function find_pp_block_gen5()
     return nil
 end
 
-local GEN5_PP_BASES = {
-    B  = 0x0226D7C6,
-    W  = 0x0226D7CA,
-    B2 = 0x0225B2EA,
-    W2 = 0x0225B32A,
-}
-
 function get_live_pp(move_index, ally)
     ally = ally or party[get_lead_mon_index()]
 
-    if _ROM.gen == 5 then
-        local base = GEN5_PP_BASES[_ROM.version]
-        local offset = (move_index - 1) * 14
-        return memory.readbyte(base + offset)
-    end
+	if _ROM.gen == 5 then
+		local base = PP_BASE ~= 0 and PP_BASE or find_pp_block_gen5()
+		if not base then return ally.pp[move_index] end
+
+		local offsets = {0x00, 0x0E, 0x1C, 0x2A}
+		return memory.readbyte(base + offsets[move_index])
+	end
 
     -- Gen 4 fallback
     local base = PP_BASE ~= 0 and PP_BASE or find_pp_block()
@@ -474,15 +474,13 @@ function pokemon.find_best_attacking_move(ally, foe)
             power = nil
         end
 	
-		-- Don't use False Swipe unless subduing OR foe is a target
-		if move.name == "False Swipe" then
-			if not config.subdue_target and not is_target then
-				power = nil
-			end
-		end
+		-- Don't use False Swipe unless subduing
+		if config.subdue_target and move.name == "False Swipe" then
+            power = nil
+        end
 
         -- Only check damaging moves with PP remaining
-		local live_pp = get_live_pp(i)
+		local live_pp = get_live_pp(i)		
 		if live_pp and live_pp > 0 and power ~= nil then
             local type_matchup = _TYPE[move.type]
 
@@ -654,7 +652,15 @@ function debug_print_pp()
     print_debug("=== PP DEBUG ===")
 
     if _ROM.gen == 5 then
-        local base = GEN5_PP_BASES[_ROM.version]
+        -- Use cached base or scan for it
+        local base = PP_BASE ~= 0 and PP_BASE or find_pp_block_gen5()
+
+        if not base then
+            print_debug("Gen 5 PP block not found!")
+            print_debug("=== END ===")
+            return
+        end
+
         print_debug(string.format("Gen 5 PP Block @ 0x%08X", base))
 
         for i = 0, 3 do
