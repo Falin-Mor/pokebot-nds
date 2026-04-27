@@ -123,7 +123,7 @@ function pokemon.read_data(address, is_raw)
 
     -- Re-calculate checksum of the data blocks and match it with mon.checksum
     -- If there is no match, assume the Pokemon data is garbage or still being written
-	 if not verify_checksums(data, checksum) then
+	 if not verify_checksums(data, checksum) and config.subdue_target then
 		 return nil
 	 end
 
