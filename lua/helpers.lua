@@ -159,7 +159,11 @@ function table_contains(table_, item)
 end
 
 function abort(reason)
-    clear_all_inputs()
+    if _EMU == "BizHawk" then
+        client.invisibleemulation(false)
+    end
+	
+	clear_all_inputs()
     print("##### BOT TASK ENDED #####")
     error(reason)
 end
@@ -187,10 +191,13 @@ end
 -- update the current game state without needing asynchronosity
 function process_frame()
 	
-	if config.focus_mode then
-		emu.emulateframeinvisible()
-		sound.clear()
-	else
+    if config.focus_mode and _EMU == "DeSmuME" then
+        emu.emulateframeinvisible()
+        sound.clear()
+    else
+        if _EMU == "BizHawk" then
+            client.invisibleemulation(config.focus_mode)
+        end
 		emu.frameadvance()
 	end
     

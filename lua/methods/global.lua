@@ -480,6 +480,8 @@ function do_pickup()
         end
         
         press_sequence(30, "B", 120, "B", 60, "B", 60)
+		wait_frames(20)
+		press_sequence("B", 60)
     else
         print_debug(item_count .. " Pickup items in party. Collecting at " .. config.pickup_threshold)
     end
@@ -491,6 +493,11 @@ function save_game()
     
     open_menu("Save")
     press_sequence("A", 90, "A", 900)
+	
+	if _EMU == "BizHawk" then
+        client.saveram() -- Flush save ram to the disk	
+    end
+	
     press_sequence("B", 60, "B", 10)
 end
 
