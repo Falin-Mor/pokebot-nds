@@ -3,7 +3,7 @@
 
 This repository is dedicated to creating a multi-purpose automated tool for the mainline DS Pokémon games. The bot can perform most monotonous tasks in these games, with all languages supported.
 
-Reported [Issues](https://github.com/wyanido/pokebot-nds/issues) and donations are very appreciated, as making this project widely compatible as the sole developer takes a lot of time and work.
+Donations are very appreciated, as making this project as the sole developer takes a lot of time and work.
 
 This is being patched as I go. Do not be afraid to drop into the discord and ask questions. Be patient as this is my first time coding lua files.
 
