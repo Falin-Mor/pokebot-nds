@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- General bot methods for all games
--- Author: wyanido, storyzealot, Zyrne
+-- Author: wyanido, storyzealot, FalinMor_
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 pointers = pointers or {}

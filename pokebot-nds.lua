@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- Main Pokebot NDS script
--- Author: wyanido
+-- Author: wyanido, FalinMor_
 -- Homepage: https://github.com/wyanido/pokebot-nds
 --
 -- Responsible for loading the files appropriate to the current state,

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- General helper methods for bot functionality
--- Author: wyanido, storyzealot
+-- Author: wyanido, storyzealot, KakuregaRamen
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ function update_party()
         
         return party_was_emptied
     end
-
+	update_pointers()
     local party_size = mbyte(pointers.party_count)
     local party_was_updated = false
 

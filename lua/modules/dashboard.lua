@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- Dashboard connection and communication
--- Author: wyanido
+-- Author: wyanido, FalinMor_
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
 local socket = require("lua\\modules\\socket")

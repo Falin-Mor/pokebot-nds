@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- Pure Lua handler for emulator Pokemon data
--- Author: wyanido, Zyrne
+-- Author: wyanido, FalinMor_
 -- Homepage: https://github.com/wyanido/pokebot-nds
 --
 -- Responsible for reading, parsing, and handling general logic
