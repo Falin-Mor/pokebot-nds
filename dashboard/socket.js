@@ -462,13 +462,29 @@ function sendPhaseMilestoneWebhook(client) {
     });
 }
 
-
 function interpretClientMessage(socket, message) {
     const index = clients.indexOf(socket);
     let client = clientData[index];
     let data = message.data;
 
     switch (message.type) {
+		case 'checksum_fail':
+			if (config.webhook_enabled) {
+				const webhookClient = new WebhookClient({ url: config.webhook_url });
+
+				const embed = new EmbedBuilder()
+					.setTitle("⚠️ Checksum Fail Limit Reached")
+					.setDescription(`The bot failed checksum verification and has temporarily bypassed the check.`)
+					.setColor("Orange")
+					.setTimestamp();
+
+				webhookClient.send({
+					username: 'PokéBot NDS',
+					avatarURL: 'https://i.imgur.com/7tJPLRX.png',
+					embeds: [embed]
+				});
+			}
+			break;
 		case 'seen':
 			updateEncounterLog(data, client);
 
