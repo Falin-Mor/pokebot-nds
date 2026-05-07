@@ -58,6 +58,21 @@ function dashboard_send(data)
     dashboard:send(json.encode(data) .. "\0")
 end
 
+function send_checksum_fail_webhook(count)
+    if disconnected then
+        return
+    end
+
+    local payload = {
+        type = "checksum_fail",
+        data = {
+            count = count
+        }
+    }
+
+    dashboard:send(json.encode(payload) .. "\0")
+end
+
 -----------------------------------------------------------------------------
 -- DASHBOARD SOCKET INITIALISATION
 -----------------------------------------------------------------------------

@@ -38,7 +38,7 @@ end
 
 --- Returns a decrypted byte table of Pokemon data from memory
 function pokemon.read_data(address, is_raw)
-    local function rand(seed) -- Thanks Kaphotics
+	local function rand(seed) -- Thanks Kaphotics
         return (0x4e6d * (seed % 65536) + ((0x41c6 * (seed % 65536) + 0x4e6d * math.floor(seed / 65536)) % 65536) * 65536 + 0x6073) % 4294967296
     end
 
@@ -123,9 +123,23 @@ function pokemon.read_data(address, is_raw)
 
     -- Re-calculate checksum of the data blocks and match it with mon.checksum
     -- If there is no match, assume the Pokemon data is garbage or still being written
-	if not verify_checksums(data, checksum) then
-		return nil
+	checksum_fail_count = checksum_fail_count or 0
+	local CHECKSUM_FAIL_LIMIT = 120
+
+	if checksum_fail_count < CHECKSUM_FAIL_LIMIT then
+		if not verify_checksums(data, checksum) then
+			checksum_fail_count = checksum_fail_count + 1
+
+			if checksum_fail_count == CHECKSUM_FAIL_LIMIT then
+				send_checksum_fail_webhook(checksum_fail_count)
+			end
+
+			return nil
+		end
+	else
 	end
+
+	checksum_fail_count = 0
 
     -- Party-only status data
     seed = pid
