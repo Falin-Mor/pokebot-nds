@@ -84,8 +84,11 @@ function handleAPIRequest(endpoint, url, method) {
             break;
         case 'clients':
             return socket.clientData;
-        case 'stats':
-            return socket.stats;
+		case 'stats':
+			return {
+				stats: socket.stats,
+				elapsedStart: socket.getElapsedStart()
+			};
         case 'recents':
             return socket.recents;
         case 'targets':

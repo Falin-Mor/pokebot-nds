@@ -42,15 +42,44 @@
 }
 
 i {
-    margin: 0 5px;
+  margin: 0 5px;
 }
 
 optgroup option {
-    color: inherit;
-    background-color: inherit;
+  color: inherit;
+  background-color: inherit;
 }
 
 optgroup {
-    color: rgba(255, 255, 255, 0.8);
-    background-color: var(--dark-color-medium);
+  color: rgba(255, 255, 255, 0.8);
+  background-color: var(--dark-color-medium);
+}
+
+/* ----------------------------- */
+/*   PHASE RESET BUTTON STYLES   */
+/* ----------------------------- */
+
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 6px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.2s;
+  font-size: inherit; /* matches global small font */
+}
+
+.icon-btn:hover {
+  opacity: 1;
+}
+
+.icon-btn:active {
+  transform: rotate(20deg);
+}
+
+/* Override global <i> margin so the icon sits tight next to "Phase" */
+.icon-btn i {
+  color: orange;
+  margin: 0;
 }

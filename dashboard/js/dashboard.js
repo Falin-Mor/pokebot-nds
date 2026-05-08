@@ -4,21 +4,6 @@ let gameCount = 0;
 let recentEncounters;
 let recentTargets;
 
-function updateBnp() {
-    const binomialDistribution = function (b, a) {
-        c = Math.pow(1 - a, b);
-        return 100 * (c * Math.pow(- (1 / (a - 1)), b) - c);
-    }
-
-    const rate = $('#shiny-rate').val();
-    const seen = document.getElementById('phase-seen').innerHTML;
-    const chance = binomialDistribution(seen, 1 / rate);
-    const cumulativeOdds = Math.floor(chance * 100) / 100;
-
-    if (cumulativeOdds == 100 || isNaN(cumulativeOdds)) cumulativeOdds = '99.99'
-    document.getElementById('bnp').innerHTML = cumulativeOdds.toString() + '%';
-}
-
 const partyContainer = $('#game-party')
 const partyMonTemplate = $('#party-mon-template');
 const partyTemplate = $('#party-template');
@@ -402,6 +387,23 @@ function updateRecentTargets(force = false) {
 
 let statsHash;
 
+function formatDuration(ms) {
+    if (!ms || ms < 0) return "--";
+
+    let totalSeconds = Math.floor(ms / 1000);
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds % 3600) / 60);
+    let seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+    } else {
+        return `${seconds}s`;
+    }
+}
+
 function updateStats() {
     const hashObject = function(obj) {
         const jsonString = JSON.stringify(obj);
@@ -418,27 +420,39 @@ function updateStats() {
         return hash;
     }
 
-    socketServerGet('stats', function (error, stats) {
-        if (error) {
-            console.error(error);
-            return;
-        }
+	socketServerGet('stats', function (error, payload) {
+		if (error) {
+			console.error(error);
+			return;
+		}
 
-        const hash = hashObject(stats);
-        if (statsHash == hash) return;
+		const stats = payload.stats;
+		window.elapsedStart = payload.elapsedStart;
 
-        statsHash = hash;
+		const hash = hashObject(stats);
+		if (statsHash == hash) return;
 
-        document.getElementById('total-seen').innerHTML      = stats.total.seen;
-        document.getElementById('total-shiny').innerHTML     = stats.total.shiny;
-        document.getElementById('total-max-iv').innerHTML    = stats.total.max_iv_sum;
-        document.getElementById('total-min-iv').innerHTML    = stats.total.min_iv_sum;
+		statsHash = hash;
 
-        document.getElementById('phase-seen').innerHTML      = stats.phase.seen;
-        document.getElementById('phase-lowest-sv').innerHTML = stats.phase.lowest_sv;
+		document.getElementById('total-seen').innerHTML      = stats.total.seen;
+		document.getElementById('total-shiny').innerHTML     = stats.total.shiny;
+		document.getElementById('total-max-iv').innerHTML    = stats.total.max_iv_sum;
+		document.getElementById('total-min-iv').innerHTML    = stats.total.min_iv_sum;
 
-        updateBnp();
-    });
+		document.getElementById('phase-seen').innerHTML      = stats.phase.seen;
+		document.getElementById('phase-lowest-sv').innerHTML = stats.phase.lowest_sv;
+		document.getElementById('phase-lowest-iv-sum').innerHTML  = stats.phase.lowest_iv_sum;
+		document.getElementById('phase-highest-iv-sum').innerHTML = stats.phase.highest_iv_sum;
+
+		const start = window.elapsedStart || 0;
+		const now = Date.now();
+
+		if (stats.phase.seen === 0) {
+			document.getElementById("phase-duration").innerHTML = "--";
+		} else {
+			document.getElementById("phase-duration").innerHTML = formatDuration(now - start);
+		}
+	});
 };
 
 function setClients() {
@@ -511,10 +525,15 @@ recentTargetsEle.addEventListener('change', () => {
     updateRecentTargets(true)
 })
 
-const rateEle = document.getElementById('shiny-rate');
-rateEle.addEventListener('change', () => {
-    updateBnp()
-})
+// Phase reset button
+const resetPhaseBtn = document.getElementById('resetPhaseBtn');
+if (resetPhaseBtn) {
+    resetPhaseBtn.addEventListener('click', () => {
+        if (confirm("Reset phase stats?")) {
+			fetch("http://localhost:51056/api/reset_phase", { method: "POST" });
+        }
+    });
+}
 
 socketServerGet('config', function (error, config) {
     if (error) {

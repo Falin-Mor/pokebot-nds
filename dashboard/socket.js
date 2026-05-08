@@ -351,6 +351,9 @@ function updateTargetLog(mon, client) {
     stats.phase.lowest_sv = '--'
 	stats.phase.highest_iv_sum = 0;
 	stats.phase.lowest_iv_sum = '--';
+	
+	elapsedStart = Date.now();
+	stats._forceUpdate = Date.now();
 
     stats[`${client.version}_${client.trainer_id}`][mon.name] = 0
 
@@ -594,6 +597,40 @@ function sendConfigToClients(new_config, target) {
         }
     }
 }
+
+const http = require('http');
+
+http.createServer((req, res) => {
+
+if (req.method === 'POST' && req.url === '/api/reset_phase') {
+    console.log("RESET PHASE BUTTON PUSHED");
+
+    stats.phase.lowest_sv = '--';
+    stats.phase.lowest_iv_sum = '--';
+    stats.phase.highest_iv_sum = 0;
+    stats.phase.seen = 0;
+
+    writeJSONToFile('../user/stats.json', stats);
+
+    // Reload stats.json WITHOUT replacing the object reference
+    const newStats = readJSONFromFile('../user/stats.json', statsTemplate);
+    stats.total = newStats.total;
+    stats.phase = newStats.phase;
+
+    // Force dashboard refresh
+    stats._forceUpdate = Date.now();
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: "ok" }));
+    return;
+}
+
+    // Default response for unknown routes
+    res.writeHead(404);
+    res.end();
+}).listen(51056, () => {
+    console.log("HTTP API listening on port 51056");
+});
 
 module.exports = {
     clientData,

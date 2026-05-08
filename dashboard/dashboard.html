@@ -158,7 +158,12 @@
                                     </td>
                                 </tr>
                             </table>
-                            <h2 class="card-title text-center w-full">Phase</h2>
+							<h2 class="card-title text-center w-full">
+								Phase
+								<button id="resetPhaseBtn" class="icon-btn" title="Reset Phase">
+									<i class="fa-solid fa-rotate-right"></i>
+								</button>
+							</h2>
                             <table class="table">
                                 <tr>
                                     <th class="col-6">Seen</th>
@@ -178,23 +183,34 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr class="col-6">
-                                    <th class="text-nowrap">Target Odds
-                                        <i class="fa fa-info-circle" id="tooltip-icon" aria-describedby="tooltip"></i>
-                                        <div id="tooltip" role="tooltip" style="font-weight: normal; text-align: left; text-wrap: wrap;">
-                                            Binomial distribution calculator B(n,p)<br><br>
-                                            For odds 1/<i>n</i>, the % represents the cumulative chance to
-                                            have encountered a target Pokémon within a 'seen' number of trials. In
-                                            most cases, <i>n</i> represents the current shiny odds.
-                                            <div id="arrow" data-popper-arrow></div>
-                                        </div>
-                                        <div class="input-group mt-10" style="width: 70px; height: 28px;">
-                                            <label class="input-group-text p-5">1/</label>
-                                            <input class="form-control h-full p-5" id="shiny-rate" min="1" value="8192">
-                                        </div>
-                                    </th>
-                                    <td id="bnp"></td>
-                                </tr>
+								<tr class="col-6">
+									<th>Lowest IV Sum</th>
+									<td>
+										<div class="text-nowrap">
+											<i class="fa fa-arrow-circle-down"></i>
+											<span id="phase-lowest-iv-sum"></span>
+										</div>
+									</td>
+								</tr>
+
+								<tr class="col-6">
+									<th>Highest IV Sum</th>
+									<td>
+										<div class="text-nowrap">
+											<i class="fa fa-arrow-circle-up"></i>
+											<span id="phase-highest-iv-sum"></span>
+										</div>
+									</td>
+								</tr>
+								<tr class="col-6">
+									<th>Phase Duration</th>
+									<td>
+										<div class="text-nowrap">
+											<i class="fa-solid fa-hourglass-half"></i>
+											<span id="phase-duration">--</span>
+										</div>
+									</td>
+								</tr>
                             </table>
                         </div>
                     </div>
