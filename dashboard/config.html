@@ -344,6 +344,23 @@
                                 </div>
                             </label>
                         </div>
+						<br>
+						<h3 class="content-subtitle">Ignore</h3>
+						<label for="ignore_traits">
+							Ignore traits
+							<i class="fa fa-info-circle" id="tooltip-icon" aria-describedby="tooltip"></i>
+							<div id="tooltip" role="tooltip">
+								YAML format. Any Pokémon matching ANY of these rules will be ignored,
+								even if it matches target traits. This overrides all target logic.
+								<div id="arrow" data-popper-arrow></div>
+							</div>
+						</label>
+
+						<textarea class="form-control" spellcheck="false"
+							style="min-width:120px; max-width:100%; height: 120px;"
+							id="ignore_traits"
+							placeholder=""></textarea>
+						<br>
                     </div>
                     <div class="card">
                         <h2 class="content-title">Wild Battles</h2>
