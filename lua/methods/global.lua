@@ -236,12 +236,14 @@ end
 
 function should_fight_foe()
     local annoying_moves = {
-        "Disable", "Torment", "Imprison", "Encore", "Taunt", "Attract",
-        "Protect", "Detect", "Substitute", "Confuse Ray", "Hypnosis",
-        "Sleep Powder", "Spore", "Yawn", "Swagger", "Thunder Wave",
-        "Will-O-Wisp", "Leech Seed", "Mean Look", "Block",
-        "Destiny Bond", "Bide"
+        "Disable", "Torment", "Imprison", "Encore", "Taunt",  "Block", "Destiny Bond"
     }
+--                             Default Moves
+--        "Disable", "Torment", "Imprison", "Encore", "Taunt", "Attract",
+--        "Protect", "Detect", "Substitute", "Confuse Ray", "Hypnosis",
+--        "Sleep Powder", "Spore", "Yawn", "Swagger", "Thunder Wave",
+--        "Will-O-Wisp", "Leech Seed", "Mean Look", "Block",
+--        "Destiny Bond", "Bide"
 
 	for _, move in ipairs(annoying_moves) do
 		if pokemon.get_move_slot(foe[1], move) ~= 0 then
@@ -419,6 +421,7 @@ function process_wild_encounter()
             else
 				
 				if not should_fight_foe() then
+					print(foe_name .. " has an annoying move & is not a target. Fleeing!")
 					flee_battle()
 					return
 				end

@@ -547,8 +547,72 @@ function pokemon.matches_ruleset(mon, ruleset)
         print_warn("Can't check Pokemon against an empty ruleset")
         return false
     end
+-- Ignore ruleset override (mirrors target logic, numeric <, species exact)
+	if config.ignore_traits then
+		for property, rule in pairs(config.ignore_traits) do
+			local value = mon[property]
 
-    -- Other traits don't matter with this override
+			-- Skip if mon doesn't have this property
+			if value ~= nil then
+
+				-- Species must be exact match (never threshold)
+				if property == "species" then
+					if type(rule) == "number" then
+						if value == rule then
+							print_debug(mon.name .. " is on the ignore list (species).")
+							return false
+						end
+					elseif type(rule) == "table" then
+						for _, entry in ipairs(rule) do
+							if value == entry then
+								print_debug(mon.name .. " is on the ignore list (species).")
+								return false
+							end
+						end
+					end
+
+				-- Boolean (same behavior as target)
+				elseif type(rule) == "boolean" then
+					if value == rule then
+						print_debug(mon.name .. " is on the ignore list (" .. property .. ").")
+						return false
+					end
+
+				-- Table (OR logic, same as target)
+				elseif type(rule) == "table" then
+					if type(value) == "string" then
+						for _, entry in ipairs(rule) do
+							if string.lower(entry) == string.lower(value) then
+								print_debug(mon.name .. " is on the ignore list (" .. property .. ").")
+								return false
+							end
+						end
+					else
+						for _, entry in ipairs(rule) do
+							if entry == value then
+								print_debug(mon.name .. " is on the ignore list (" .. property .. ").")
+								return false
+							end
+						end
+					end
+
+				-- String (case-insensitive equality)
+				elseif type(value) == "string" and type(rule) == "string" then
+					if string.lower(value) == string.lower(rule) then
+						print_debug(mon.name .. " is on the ignore list (" .. property .. ").")
+						return false
+					end
+
+				-- Number (LESS THAN)
+				elseif type(value) == "number" and type(rule) == "number" then
+					if value < rule then
+						print_debug(mon.name .. " is on the ignore list (" .. property .. " < " .. rule .. ").")
+						return false
+					end
+				end
+			end
+		end
+	end
 
 	if config.always_catch_shinies and mon.shiny then
 		return true
@@ -587,6 +651,7 @@ WHITELIST_100_FEMALE = {
     -- so it can print a warning when a meaningless value 
     -- is written into target traits
     local is_target = true
+
 
     -- Check items from ruleset against values from the Pokemon's data,
     -- dynamically changing for different data types
