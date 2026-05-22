@@ -330,7 +330,15 @@
                         <br>						
                         <div class="custom-switch">
                             <input type="checkbox" id="save_game_after_catch">
-                            <label for="save_game_after_catch">Save game after obtaining a target</label>
+                            <label for="save_game_after_catch">Save game after obtaining a target.</label>
+                        </div>
+                        <br>
+						<div class="custom-switch">
+                            <input type="checkbox" id="save_target_state">
+                            <label for="save_target_state"> Save State game after obtaining a target.
+                                <i class="fa fa-info-circle" id="tooltip-icon" aria-describedby="tooltip"></i>
+                            <div id="tooltip" role="tooltip">Warning: Running multiple copys of the game may result in overwriting save states. This can only track one slot per game at a time. This will use slots in order of last used. Recommended to be used with manual catch.</div>
+                            </label>
                         </div>
                         <br>
                         <div class="custom-switch">

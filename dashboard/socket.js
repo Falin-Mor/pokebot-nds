@@ -80,7 +80,8 @@ const configTemplate = {
 	focus_mode: false,
 	HighLowIV: false,
 	hunt_raikou: false,
-	hunt_entei: false
+	hunt_entei: false,
+    save_target_state: false
 }
 
 const statsTemplate = {
@@ -367,7 +368,7 @@ function formatClientMessage(type, data) {
     });
 }
 
-function webhookLogPokemon(mon, client) {
+function webhookLogPokemon(mon, client, isNonTarget = false) {
     let gender;
     switch (mon.gender.toLowerCase()) {
         case 'male': gender = '♂️'; break;
@@ -380,63 +381,62 @@ function webhookLogPokemon(mon, client) {
     const sparkle = (mon.shinyValue < 8 || mon.shiny) ? '✨' : '';
     const folder = (mon.shinyValue < 8 || mon.shiny) ? 'shiny/' : '';
     const file = new AttachmentBuilder(`./assets/pokemon/${folder}${species}.png`);
-    const embed = new EmbedBuilder()
+
+    const embed = new EmbedBuilder();
+
     if (mon.shinyValue < 8 || mon.shiny) {
         embed
-          .setTitle(
-            `${
-              stats[`${client.version}_${client.trainer_id}`][mon.name]
-            } Shiny encountered! Lv.${mon.level} ${mon.name} ${gender}`
-          )
-          .setThumbnail(`attachment://${species}.png`)
-          .setDescription(`Found at ${client.map_name} (${client.version})`)
-          .addFields(
-            {
-              name: "Shiny Value",
-              value: `${sparkle}${mon.shinyValue.toString()}`,
-              inline: true,
-            },
-            { name: "Nature", value: mon.nature, inline: true },
-            { name: "Item", value: mon.heldItem, inline: true }
-          )
-          .addFields({ name: "\u200B", value: `IVs (${iv_sum} Total)` })
-          .addFields(
-            { name: "HP", value: mon.hpIV.toString(), inline: true },
-            { name: "ATK", value: mon.attackIV.toString(), inline: true },
-            { name: "DEF", value: mon.defenseIV.toString(), inline: true },
-            { name: "SP.ATK", value: mon.spAttackIV.toString(), inline: true },
-            { name: "SP.DEF", value: mon.spDefenseIV.toString(), inline: true },
-            { name: "SPEED", value: mon.speedIV.toString(), inline: true }
-          )
-          .setColor("Aqua");
+            .setTitle(
+                `${stats[`${client.version}_${client.trainer_id}`][mon.name]} Shiny encountered! Lv.${mon.level} ${mon.name} ${gender}`
+            )
+            .setThumbnail(`attachment://${species}.png`)
+            .setDescription(`Found at ${client.map_name} (${client.version})`)
+            .addFields(
+                { name: "Shiny Value", value: `${sparkle}${mon.shinyValue.toString()}`, inline: true },
+                { name: "Nature", value: mon.nature, inline: true },
+                { name: "Item", value: mon.heldItem, inline: true }
+            )
+            .addFields({ name: "\u200B", value: `IVs (${iv_sum} Total)` })
+            .addFields(
+                { name: "HP", value: mon.hpIV.toString(), inline: true },
+                { name: "ATK", value: mon.attackIV.toString(), inline: true },
+                { name: "DEF", value: mon.defenseIV.toString(), inline: true },
+                { name: "SP.ATK", value: mon.spAttackIV.toString(), inline: true },
+                { name: "SP.DEF", value: mon.spDefenseIV.toString(), inline: true },
+                { name: "SPEED", value: mon.speedIV.toString(), inline: true }
+            )
+            .setColor("Aqua");
     } else {
+        // Normal encounter embed
         embed
-          .setTitle(
-            `${stats[`${client.version}_${client.trainer_id}`][mon.name]} ${
-              mon.name
-            } encountered!`
-          )
-          .setThumbnail(`attachment://${species}.png`)
-          .setDescription(`Found at ${client.map_name} (${client.version})`);
+            .setTitle(
+                `${stats[`${client.version}_${client.trainer_id}`][mon.name]} ${mon.name} encountered!`
+            )
+            .setThumbnail(`attachment://${species}.png`)
+            .setDescription(`Found at ${client.map_name} (${client.version})`);
     }
+
     const webhookClient = new WebhookClient({ url: config.webhook_url });
+
     let messageContents = {
         username: 'PokéBot NDS',
         avatarURL: 'https://i.imgur.com/7tJPLRX.png',
         embeds: [embed],
         files: [file],
-        content:
-        mon.shinyValue < 8 || mon.shiny
-          ? `Encountered a shiny ✨ ${mon.name} ✨!`
-          : "🎉 New milestone achieved!",
+        content: isNonTarget
+            ? `❌ Non‑target shiny ✨ ${mon.name} ✨ found! ❌`
+            : (mon.shinyValue < 8 || mon.shiny)
+                ? `Encountered a shiny ✨ ${mon.name} ✨!`
+                : "🎉 New milestone achieved!",
     };
 
     if (config.ping_user) {
-        messageContents.content = `📢 <@${config.user_id}>`
+        messageContents.content = `📢 <@${config.user_id}>`;
     }
 
     webhookClient.send(messageContents);
 }
+
 
 function webhookTest(url) {
     const webhookClient = new WebhookClient({ url: url });
@@ -492,9 +492,9 @@ function interpretClientMessage(socket, message) {
 			updateEncounterLog(data, client);
 
 			// 🔹 1. Non‑target shiny webhook
-			if (config.webhook_enabled && (data.shiny || data.shinyValue < 8)) {
-				webhookLogPokemon(data, client);
-			}
+            if (config.webhook_enabled && (data.shiny || data.shinyValue < 8)) {
+                webhookLogPokemon(data, client, true); // non‑target shiny
+            }
 
 			// 🔹 2. Phase milestone webhook (8192, 10k, every 5k)
 			const phaseEncounters = stats.phase.seen;
