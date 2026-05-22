@@ -349,62 +349,306 @@ function mode_random_encounters_small()
 end
 
 function mode_phenomenon_encounters()
-    local home = {
-        x = game_state.trainer_x,
-        z = game_state.trainer_z
-    }
+	print("Phenomenon Encounter Mode:")
+    print("The bot will seek pokemon in right-angle patterns for maximum efficiency,")
+    print("returning home tile same way it came. Try to avoid obstacles & walls.")
+    print("Home radius is one tile away from home. Please allow space for this.")
+    save_game()
+	
+    local function snap(v)
+        return math.floor(v + 0.5)
+    end
+
+    local function set_home()
+        home = {
+            x = snap(game_state.trainer_x) - 1,
+            z = snap(game_state.trainer_z) - 1
+        }
+        print(string.format("[HOME] Home set to (%d, %d)", home.x, home.z))
+    end
+
+    set_home()
+	
+    local function hold_run()
+        hold_button("B")
+    end
 
     local function accept_interrupt_text()
-        local interrupted = false
+        release_button("B")
 
         while mdword(pointers.text_interrupt) == 2 do
-            press_sequence("Up", 1, "A", 1)
-            interrupted = true
-        end
+            press_button("A")
+            wait_frames(1)
 
-        if interrupted then
-            move_to(home)
-        end
-    end
-
-    local function move_in_direction(dir)
-        accept_interrupt_text()
-
-        hold_button("B")
-        hold_button(dir)
-        wait_frames(4)
-        release_button(dir)
-        release_button("B")
-    end
-
-    while true do
-        check_party_status()
-
-        local function do_encounter()
-            local dir1 = config.move_direction == "horizontal" and "Left" or "Up"
-            local dir2 = config.move_direction == "horizontal" and "Right" or "Down"
-
-            while game_state.phenomenon_x == 0 and game_state.phenomenon_z == 0 do
-                move_in_direction(dir1)
-                move_in_direction(dir2)
+            if mdword(pointers.text_interrupt) == 2 then
+                hold_button("Up")
+                press_button("A")
+                wait_frames(2)
+                release_button("Up")
             end
+        end
+    end
+	local stuck_timer = 0
+	local stuck_limit = 1800
+	local movement_failed = false
+	local soft_reset_count = 0
 
-            print("Phenomenon detected! Moving...")
-            move_to({ x = game_state.phenomenon_x, z = game_state.phenomenon_z })
+	local function soft_reset_recover()
+		soft_reset_count = soft_reset_count + 1
+		print("[CAUTION] - Excessive soft resets may mean home needs to be moved.")
+		print("Soft Resets:" .. soft_reset_count)
+		clear_all_inputs()
+		soft_reset()
+		clear_all_inputs()
 
-            wait_frames(300) --- Needs a moment before checking the encounter.
+		while not game_state.in_game do
+			progress_text()
+		end
+
+		wait_frames(300)
+		set_home()
+		stuck_timer = 0
+	end
+	
+	local function watchdog_reset()
+		print_debug("[WATCHDOG] Reset (idle)")
+		stuck_timer = 0
+	end
+
+	local function watchdog_tick()
+		stuck_timer = stuck_timer + 1
+		print_debug("[WATCHDOG] Tick = " .. stuck_timer)
+	end
+
+	local function watchdog_check()
+		if stuck_timer > stuck_limit then
+			soft_reset_recover()
+		end
+	end
+	
+    local function move_to_snapped(target)
+        local tx = snap(target.x)
+        local tz = snap(target.z)
+        local function tick()
+            accept_interrupt_text()
+			watchdog_tick()
+			
             if game_state.in_battle then
                 process_wild_encounter()
-            else
-                print("Item received.")
-                accept_interrupt_text()
+                return true
             end
-            
-            move_to(home)
+
+            hold_run()
+            return false
         end
 
-        do_encounter()
+        move_to({ x = tx }, tick)
+        move_to({ z = tz }, tick)
     end
+
+    local idle_offsets = { -1, 1 }
+	local function idle_horizontal()
+		watchdog_reset() 
+
+		for _, o in ipairs(idle_offsets) do
+			if game_state.phenomenon_x ~= 0 then return end
+			accept_interrupt_text()
+			hold_run()
+			move_to_snapped({ x = home.x + o, z = home.z })
+		end
+		move_to_snapped(home)
+	end
+
+	local function idle_vertical()
+		watchdog_reset() 
+
+		for _, o in ipairs(idle_offsets) do
+			if game_state.phenomenon_x ~= 0 then return end
+			accept_interrupt_text()
+			hold_run()
+			move_to_snapped({ x = home.x, z = home.z + o })
+		end
+		move_to_snapped(home)
+	end
+
+    local force_backtrack = false
+    local function move_axis(axis, target)
+        local t = snap(target)
+        local frames = 0
+
+        local function tick()
+            accept_interrupt_text()
+			watchdog_tick()
+			
+            frames = frames + 1
+            if frames > 240 then
+                return true
+            end
+
+            if game_state.in_battle then
+                process_wild_encounter()
+                force_backtrack = true
+                return true
+            end
+
+            hold_run()
+            return false
+        end
+
+        if axis == "x" then
+            move_to({ x = t }, tick)
+        else
+            move_to({ z = t }, tick)
+        end
+    end
+
+    local function backtrack_to(target)
+        local tx = snap(target.x)
+        local tz = snap(target.z)
+        local frames = 0
+
+        local function tick()
+            accept_interrupt_text()
+			watchdog_tick()
+			
+            frames = frames + 1
+            if frames > 240 then
+                return true
+            end
+
+            if game_state.in_battle then
+                process_wild_encounter()
+                return true
+            end
+
+            hold_run()
+            return false
+        end
+
+        move_to({ x = tx }, tick)
+        move_to({ z = tz }, tick)
+    end
+
+    local function final_approach(px, pz)
+        local tx = snap(px) + 1
+        local tz = snap(pz) + 1
+        local frames = 0
+
+        local function tick()
+            accept_interrupt_text()
+			watchdog_tick()
+
+            frames = frames + 1
+			if frames > 240 then
+				movement_failed = true
+				clear_all_inputs()
+				emu.frameadvance()
+				return true
+			end
+
+            if game_state.in_battle then
+                process_wild_encounter()
+                force_backtrack = true
+                return true
+            end
+
+            hold_run()
+            return false
+        end
+
+        move_to({ x = tx, z = tz }, tick)
+    end
+
+	local function do_backtrack()
+		if brick ~= nil then
+			backtrack_to(brick)
+		end
+		if wood ~= nil then
+			backtrack_to(wood)
+		end
+		if straw ~= nil then
+			backtrack_to(straw)
+		end
+
+		backtrack_to(home)
+	end
+
+    local function run_phenomenon(px, pz)
+        force_backtrack = false
+
+        move_axis("x", px)
+        if force_backtrack then return false end
+        straw = { x = snap(game_state.trainer_x) - 1, z = snap(game_state.trainer_z) - 1 }
+
+        move_axis("z", pz)
+        if force_backtrack then return false end
+        wood = { x = snap(game_state.trainer_x) - 1, z = snap(game_state.trainer_z) - 1 }
+
+        move_axis("x", px)
+        if force_backtrack then return false end
+        brick = { x = snap(game_state.trainer_x) - 1, z = snap(game_state.trainer_z) - 1 }
+
+        move_axis("z", pz)
+        if force_backtrack then return false end
+        targetV = { x = snap(game_state.trainer_x) - 1, z = snap(game_state.trainer_z) - 1 }
+
+        final_approach(px, pz)
+        if force_backtrack then return false end
+		
+		if movement_failed then return false end
+
+		if game_state.in_battle then
+			wait_frames(300)
+			accept_interrupt_text()
+		elseif game_state.phenomenon_x == 0 then
+			print("[APPROACH] Item received")
+		end
+		
+        return true
+    end
+
+
+    local last_phem_x, last_phem_z = nil, nil
+	while true do
+		accept_interrupt_text()
+		hold_run()
+
+		if movement_failed then
+			print("Movement failed — performing soft reset")
+			movement_failed = false
+			soft_reset_recover()
+			watchdog_reset()
+			watchdog_check()
+		else
+			if game_state.phenomenon_x == 0 then
+				last_phem_x, last_phem_z = nil, nil
+
+				if config.move_direction == "horizontal" then
+					idle_horizontal()
+				else
+					idle_vertical()
+				end
+
+				watchdog_reset()
+
+			else
+				watchdog_tick()
+
+				local px = snap(game_state.phenomenon_x)
+				local pz = snap(game_state.phenomenon_z)
+
+				if last_phem_x == nil then
+					print(string.format("[PHEM] Phenomenon at (%d, %d)", px, pz))
+					last_phem_x, last_phem_z = px, pz
+
+					local ok = run_phenomenon(px, pz)
+					do_backtrack()
+				end
+			end
+
+			watchdog_check()
+		end
+	end
 end
 
 function mode_daycare_eggs()

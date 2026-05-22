@@ -150,6 +150,23 @@ function mode_fishing()
     end
 end
 
+--- Logs wild encounters without automated inputs while the user plays
+function mode_manual()
+    while true do
+        while not game_state.in_battle do
+            process_frame()
+        end
+
+        for i = 1, #foe, 1 do
+            pokemon.log_encounter(foe[i])
+        end
+
+        while game_state.in_battle do
+            process_frame()
+        end
+    end
+end
+
 --- Returns the index of the first non-fainted Pokémon in the party
 function get_lead_mon_index()
 	update_party()
@@ -694,12 +711,12 @@ function move_to(target, on_move)
 
         while game_state.trainer_x < target.x - 0.5 do
             hold_button("Right")
-            if on_move then on_move() end
+            if on_move and on_move() then return true end
         end
         
         while game_state.trainer_x > target.x + 0.5 do
             hold_button("Left")
-            if on_move then on_move() end
+            if on_move and on_move() then return true end
         end
     end
 
@@ -708,14 +725,16 @@ function move_to(target, on_move)
         
         while game_state.trainer_z < target.z - 0.5 do
             hold_button("Down")
-            if on_move then on_move() end
+            if on_move and on_move() then return true end
         end
         
         while game_state.trainer_z > target.z + 0.5 do
             hold_button("Up")
-            if on_move then on_move() end
+            if on_move and on_move() then return true end
         end
     end
+
+    return false
 end
 
 -- Same as above essentially, but won't gradually move the player off course

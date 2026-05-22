@@ -330,7 +330,7 @@ function pokemon.parse_data(data, enrich)
     return mon
 end
 
---- Sends a Pokemon to the dashboard to log it as an encounter
+	--- Sends a Pokemon to the dashboard to log it as an encounter
 function pokemon.log_encounter(mon)
     if not mon then
         print_warn("Tried to log a non-existent Pokemon!")
@@ -362,9 +362,88 @@ function pokemon.log_encounter(mon)
     -- Send encounter to dashboard for logging
     local is_target = pokemon.matches_ruleset(mon, config.target_traits)
     local msg_type = is_target and "seen_target" or "seen"
+	
+	savestateD  = savestateD  or 0
+	savestateP  = savestateP  or 0
+	savestatePL = savestatePL or 0
+	savestateHG = savestateHG or 0
+	savestateSS = savestateSS or 0
+	savestateB  = savestateB  or 0
+	savestateW  = savestateW  or 0
+	savestateB2 = savestateB2 or 0
+	savestateW2 = savestateW2 or 0
+	
+	local function increment_slot(game)
+		if game == "D" then
+			savestateD = savestateD + 1
+			if savestateD > 9 then savestateD = 0 end
+			return savestateD
+		end
+
+		if game == "P" then
+			savestateP = savestateP + 1
+			if savestateP > 9 then savestateP = 0 end
+			return savestateP
+		end
+
+		if game == "PL" then
+			savestatePL = savestatePL + 1
+			if savestatePL > 9 then savestatePL = 0 end
+			return savestatePL
+		end
+
+		if game == "HG" then
+			savestateHG = savestateHG + 1
+			if savestateHG > 9 then savestateHG = 0 end
+			return savestateHG
+		end
+
+		if game == "SS" then
+			savestateSS = savestateSS + 1
+			if savestateSS > 9 then savestateSS = 0 end
+			return savestateSS
+		end
+
+		if game == "B" then
+			savestateB = savestateB + 1
+			if savestateB > 9 then savestateB = 0 end
+			return savestateB
+		end
+
+		if game == "W" then
+			savestateW = savestateW + 1
+			if savestateW > 9 then savestateW = 0 end
+			return savestateW
+		end
+
+		if game == "B2" then
+			savestateB2 = savestateB2 + 1
+			if savestateB2 > 9 then savestateB2 = 0 end
+			return savestateB2
+		end
+
+		if game == "W2" then
+			savestateW2 = savestateW2 + 1
+			if savestateW2 > 9 then savestateW2 = 0 end
+			return savestateW2
+		end
+
+		return 0
+	end
+
+	local function save_target_state(mon)
+		if not config.save_target_state then return end
+
+		local game = _ROM.version or "UNKNOWN"
+		local slot = increment_slot(game)
+
+		savestate.save(slot)
+		print("Saved target state for " .. game .. " to slot " .. slot)
+	end
 
     if is_target then
-        print(mon.name .. " is a target!")
+        save_target_state(mon)
+		print(mon.name .. " is a target!")
 
         if config.save_pkx then
             local shiny = mon.shiny and " ★" or ""

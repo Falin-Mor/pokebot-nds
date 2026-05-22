@@ -159,10 +159,6 @@ function table_contains(table_, item)
 end
 
 function abort(reason)
-    if _EMU == "BizHawk" then
-        client.invisibleemulation(false)
-    end
-	
 	clear_all_inputs()
     print("##### BOT TASK ENDED #####")
     error(reason)
@@ -195,9 +191,6 @@ function process_frame()
         emu.emulateframeinvisible()
         sound.clear()
     else
-        if _EMU == "BizHawk" then
-            client.invisibleemulation(config.focus_mode)
-        end
 		emu.frameadvance()
 	end
     
