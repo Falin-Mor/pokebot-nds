@@ -47,6 +47,62 @@ local function find_save_anchor_from_runtime_tid(runtime_anchor)
     return nil
 end
 
+-------------------------------------------------------------------------------
+-- Platinum battle-species scanner 
+-------------------------------------------------------------------------------
+
+local printed_species_debug_not_ready = false
+local printed_species_debug_not_found = false
+local printed_species_debug_found     = false
+
+local platinum_species_addr = nil
+local platinum_status_addr  = nil
+
+local function platinum_scan_species_window()
+
+    if platinum_species_addr then
+        return platinum_species_addr, platinum_status_addr
+    end
+
+    local mon = foe and foe[1]
+    if not mon or mon.species == 0 then
+        if not printed_species_debug_not_ready then
+            print_debug("[PT] Species scan: struct not ready yet")
+            printed_species_debug_not_ready = true
+        end
+        return nil, nil
+    end
+
+    local target_species = mon.species
+    local SCAN_START     = 0x022C5700
+    local SCAN_END       = 0x022C5900
+    local STATUS_OFFSET  = 0x5B9E
+
+    for addr = SCAN_START, SCAN_END, 2 do
+        if mword(addr) == target_species then
+            platinum_species_addr = addr
+            platinum_status_addr  = addr + STATUS_OFFSET
+
+            if not printed_species_debug_found then
+                print_debug(string.format(
+                    "[PT] Species found: %d @ %08X → status @ %08X",
+                    target_species, platinum_species_addr, platinum_status_addr
+                ))
+                printed_species_debug_found = true
+            end
+
+            return platinum_species_addr, platinum_status_addr
+        end
+    end
+
+    if not printed_species_debug_not_found then
+        print_debug("[PT] Species scan: not in window yet.")
+        printed_species_debug_not_found = true
+    end
+
+    return nil, nil
+end
+
 -----------------------------------------------------------------------------
 
 function update_pointers()
@@ -55,7 +111,18 @@ function update_pointers()
     -------------------------------------------------------------------------
     local anchor     = mdword(0x21C0794 + _ROM.offset)
     local foe_anchor = mdword(anchor + 0x217A8)
+    -------------------------------------------------------------------------
+    -- Battle species/status scan (Platinum-only)
+    -------------------------------------------------------------------------
+	local species_addr, status_addr = platinum_scan_species_window()
 
+	local hp_addr  = nil
+	local max_addr = nil
+
+	if species_addr then
+		hp_addr  = species_addr + 0x4C
+		max_addr = species_addr + 0x50
+	end
     -------------------------------------------------------------------------
     -- Auto-detect save-block anchor using runtime TID
     -------------------------------------------------------------------------
@@ -75,8 +142,12 @@ function update_pointers()
 
         foe_count   = foe_anchor - 0x2D5C,
         current_foe = foe_anchor - 0x2D58,
-
-        map_header  = anchor + 0x1294,
+		foe_species = species_addr,
+		foe_status  = status_addr,
+		currentHP   = hp_addr,
+		maxHP       = max_addr,
+		
+		map_header  = anchor + 0x1294,
         menu_option = 0x21C4C86 + _ROM.offset,
 
         trainer_x   = 0x21C5CE4 + _ROM.offset,
@@ -95,7 +166,7 @@ function update_pointers()
         battle_menu_state  = anchor + 0x44878,
         battle_menu_state2 = anchor + 0xED6A6,
 		battle_bag_page = anchor + 0xC47E,
-
+		
         battle_indicator       = 0x021D18F2 + _ROM.offset,
         fishing_bite_indicator = 0x021CF636 + _ROM.offset,
 
@@ -142,3 +213,33 @@ function update_pointers()
         battle_items_pocket_qty  = tid_anchor + 0xCBC,
     }
 end
+
+-- Platinum battle state reader
+local function pl_battle_menu_state()
+    return mbyte(pointers.battle_menu_state)
+end
+
+function get_battle_state()
+    local s = pl_battle_menu_state()
+
+    if s == 0 then
+        return "Busy"        -- text, animations, HP bar, move execution
+    elseif s == 1 then
+        return "Menu"        -- FIGHT root menu (ready)
+    elseif s == 4 then
+        return "MoveSelect"
+    elseif s == 8 then
+        return "Bag"
+    elseif s == 10 then
+        return "Pokemon"
+    elseif s == 14 then
+        return "Run"         -- also appears during move execution
+    else
+        return "Unknown"
+    end
+end
+
+function foe_has_status()
+    return mbyte(pointers.foe_status) ~= 0
+end
+

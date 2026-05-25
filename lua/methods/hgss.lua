@@ -1,14 +1,80 @@
 -----------------------------------------------------------------------------
 -- Bot method overrides for HGSS
--- Author: wyanido
+-- Author: wyanido, FalinMor_
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
+local printed_hgss_not_ready  = false
+local printed_hgss_not_found  = false
+local printed_hgss_found      = false
+
+local hgss_species_addr = nil
+local hgss_status_addr  = nil
+
+local function hgss_scan_species_window()
+
+    -- Return cached pointers if already found
+    if hgss_species_addr then
+        return hgss_species_addr, hgss_status_addr
+    end
+
+    -- Ensure foe struct is populated
+    local mon = foe and foe[1]
+    if not mon or mon.species == 0 then
+        if not printed_hgss_not_ready then
+            print_debug("[HGSS] Species scan: struct not ready yet")
+            printed_hgss_not_ready = true
+        end
+        return nil, nil
+    end
+
+    local target_species = mon.species
+
+    -- HGSS window (confirmed stable)
+    local SCAN_START    = 0x022C1300
+    local SCAN_END      = 0x022C1700
+    local STATUS_OFFSET = 0xB24C   -- confirmed from your findings
+
+    -- Scan for species ID
+    for addr = SCAN_START, SCAN_END, 2 do
+        if mword(addr) == target_species then
+            hgss_species_addr = addr
+            hgss_status_addr  = addr + STATUS_OFFSET
+
+            if not printed_hgss_found then
+                print_debug(string.format(
+                    "[HGSS] Species found: %d @ %08X → status @ %08X",
+                    target_species, hgss_species_addr, hgss_status_addr
+                ))
+                printed_hgss_found = true
+            end
+
+            return hgss_species_addr, hgss_status_addr
+        end
+    end
+
+    if not printed_hgss_not_found then
+        print_debug("[HGSS] Species scan: not in window yet.")
+        printed_hgss_not_found = true
+    end
+
+    return nil, nil
+end
 
 function update_pointers()
     local anchor = mdword(0x21D4158 + _ROM.offset)
     local foe_anchor = mdword(anchor + 0x6930)
     local bag_page_anchor = mdword(anchor + 0x348C4)
     
+	local species_addr, status_addr = hgss_scan_species_window()
+
+	local hp_addr  = nil
+	local max_addr = nil
+
+	if species_addr then
+		hp_addr  = species_addr + 0x4C
+		max_addr = species_addr + 0x50
+	end
+
     pointers = {
         -- items_pocket
         -- medicine_pocket
@@ -24,8 +90,12 @@ function update_pointers()
         
         foe_count   = foe_anchor + 0xC14,
         current_foe = foe_anchor + 0xC18,
-
-        map_header  = anchor - 0x22DA4,
+		foe_species = species_addr,
+		foe_status  = status_addr,
+		currentHP   = hp_addr,
+		maxHP       = max_addr,
+       
+ 	    map_header  = anchor - 0x22DA4,
         trainer_x   = 0x21DA6F4 + _ROM.offset,
         trainer_y   = 0x21DA6F8 + _ROM.offset,
         trainer_z   = 0x21DA6FC + _ROM.offset,
@@ -50,6 +120,10 @@ function update_pointers()
         starter_data = anchor + 0x1BC00
         -- registered_key_item_1 = anchor - 0x231FC,
     }
+end
+
+function foe_has_status()
+    return mbyte(pointers.foe_status) ~= 0
 end
 
 --- Opens the menu and selects the specified option.

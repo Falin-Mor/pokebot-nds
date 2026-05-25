@@ -1,8 +1,63 @@
 -----------------------------------------------------------------------------
 -- General bot methods for gen 4 games (DPPt, HGSS)
--- Author: wyanido, storyzealot
--- Homepage: https://github.com/wyanido/pokebot-nds
+-- Author: wyanido, storyzealot, FalinMor_
+-- Homepage: https://github.com/Falin-Mor/pokebot-nds
 -----------------------------------------------------------------------------
+local printed_d_not_ready  = false
+local printed_d_not_found  = false
+local printed_d_found      = false
+
+local d_species_addr = nil
+local d_status_addr  = nil
+
+local function diamond_scan_species_window()
+
+    if d_species_addr then
+        return d_species_addr, d_status_addr
+    end
+
+    -- Ensure foe struct is populated
+    local mon = foe and foe[1]
+    if not mon or mon.species == 0 then
+        if not printed_d_not_ready then
+            print_debug("[DP] Species scan: struct not ready yet")
+            printed_d_not_ready = true
+        end
+        return nil, nil
+    end
+
+    local target_species = mon.species
+
+    -- Diamond window (stable)
+    local SCAN_START    = 0x022B5800
+    local SCAN_END      = 0x022B5A00
+    local STATUS_OFFSET = 0x5A86
+
+    -- Scan for species ID
+    for addr = SCAN_START, SCAN_END, 2 do
+        if mword(addr) == target_species then
+            d_species_addr = addr
+            d_status_addr  = addr + STATUS_OFFSET
+
+            if not printed_d_found then
+                print_debug(string.format(
+                    "[DP] Species found: %d @ %08X → status @ %08X",
+                    target_species, d_species_addr, d_status_addr
+                ))
+                printed_d_found = true
+            end
+
+            return d_species_addr, d_status_addr
+        end
+    end
+
+    if not printed_d_not_found then
+        print_debug("[DP] Species scan: not in window yet.")
+        printed_d_not_found = true
+    end
+
+    return nil, nil
+end
 
 function update_pointers()
     local anchor = mdword(0x21C489C + _ROM.offset)
@@ -10,6 +65,16 @@ function update_pointers()
     local bag_page_anchor = mdword(anchor + 0x560EE)
     local roamer_anchor = mdword(anchor + 0x4272A)
 
+	local species_addr, status_addr = diamond_scan_species_window()
+
+	local hp_addr  = nil
+	local max_addr = nil
+
+	if species_addr then
+		hp_addr  = species_addr + 0x4C
+		max_addr = species_addr + 0x50
+	end
+	
     pointers = {
         start_value = 0x21066D4, -- 0 until save has been loaded
         -- items_pocket      = anchor + 0x59E,
@@ -24,7 +89,11 @@ function update_pointers()
 
         foe_count   = foe_anchor - 0x2B74,
         current_foe = foe_anchor - 0x2B70,
-
+		foe_species = species_addr,
+		foe_status  = status_addr,
+		currentHP   = hp_addr,
+		maxHP       = max_addr,
+		
         map_header  = anchor + 0x11B2,
         menu_option = 0x21CDF22 + _ROM.offset,
         trainer_x   = 0x21CEF70 + _ROM.offset,
@@ -52,6 +121,10 @@ function update_pointers()
         
         roamer = roamer_anchor + 0x20,
     }
+end
+
+function foe_has_status()
+    return mbyte(pointers.foe_status) ~= 0
 end
 
 --- Waits a random duration after a reset to decrease the odds of hitting duplicate seeds

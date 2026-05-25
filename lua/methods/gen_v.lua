@@ -3,7 +3,6 @@
 -- Author: wyanido, storyzealot
 -- Homepage: https://github.com/wyanido/pokebot-nds
 -----------------------------------------------------------------------------
-
 function update_pointers()
     local anchor = mdword(0x2146A88 + _ROM.offset)
 
@@ -40,9 +39,13 @@ function update_pointers()
         egg_hatching = 0x0226DF68 + _ROM.offset,
 
         -- Battle
-        battle_indicator = 0x0226ACE6 + _ROM.offset, -- 0x41 if during a battle
+        battle_indicator = 0x0226ACE6,
         foe_count        = 0x0226ACF0 + _ROM.offset, -- 4 bytes before the first index
         current_foe      = 0x0226ACF4 + _ROM.offset, -- PID of foe, set immediately after the battle transition ends
+		foe_species		 = 0x0226D8F4,
+		maxHP      		 = 0x0226D8F6,
+		currentHP  		 = 0x0226D8F8,
+		foe_status  	 = 0x0226D816,
 
         -- Misc
         save_indicator            = 0x021F0100 + _ROM.offset, -- 1 while save menu is open
@@ -81,6 +84,9 @@ function randomise_reset()
     end
 end
 
+function foe_has_status()
+    return mbyte(pointers.foe_status) ~= 0
+end
 --- Opens the menu and selects the specified option
 -- @param menu Name of the menu to open
 function open_menu(menu)
@@ -297,7 +303,8 @@ function mode_random_encounters()
         hold_button("B")
 
         while not game_state.in_battle do
-            move_in_direction(dir1)
+			print_debug("in_battle: " .. tostring(game_state.in_battle) .. " | foe: " .. tostring(foe ~= nil))
+		    move_in_direction(dir1)
             move_in_direction(dir2)
         end
         
