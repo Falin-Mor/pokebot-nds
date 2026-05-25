@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" class="auto-scaling-disabled">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéBot NDS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Halfmoon/1.0.4/css/halfmoon-variables.css" integrity="sha512-ua2VFI0tK7cQQ5b8xPt8djKW8osl0nwnhgh28hfgYWYlUatSZuVWtsB0sRBM9dwN2Gbcz+YBgrFxW/+7J5Lvew==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-templates@1.0.0/jquery.tmpl.min.js" integrity="sha256-EX43U5s1k9lc6mJ7GoHd3EDBqssRp3x/bBxccLTV99o=" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/b079a6b886.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="css/tooltip.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars" data-dm-shortcut-enabled="true" data-set-preferred-mode-onload="true">
+    <div class="page-wrapper with-navbar">
+        <div class="sticky-alerts"></div>
+        <header-component></header-component>
+        <div class="sticky-alerts"></div>
+<div class="content-wrapper">
+    <div class="d-flex flex-row flex-wrap" style="gap: 20px; align-items: flex-start;">
+        <div class="card flex-fill" style="padding: 20px; min-width: 500px; display:flex; flex-direction:column;">
+		<div class="d-flex justify-content-between align-items-center mb-10">
+			<h2 class="content-title m-0">Shiny Odds Calculator</h2>
+			<button id="refresh-binomial" class="btn btn-dark" title="Sync to Current Phase" style="padding: 4px 8px; font-size: 14px;">
+				<i class="fa-solid fa-rotate-right" style="color:#ff8c00; position: relative; top: -4px;"></i>
+			</button>
+		</div>
+            <table class="table w-full">
+                <tbody>
+                    <tr class="col-6">
+                        <th class="text-nowrap">
+                            Target Odds
+                            <i class="fa fa-info-circle" id="tooltip-icon" aria-describedby="tooltip"></i>
+                            <div id="tooltip" role="tooltip" style="font-weight: normal; text-align: left; text-wrap: wrap;">
+                                Binomial distribution calculator B(n,p)<br><br>
+                                For odds 1/<i>n</i>, the % represents the cumulative chance to
+                                have encountered a target Pokémon within a 'seen' number of trials.
+                                <div id="arrow" data-popper-arrow></div>
+                            </div>
+                            <div class="input-group mt-10" style="width: 90px; height: 28px;">
+                                <label class="input-group-text p-5">1/</label>
+                                <input class="form-control h-full p-5" id="shiny-rate" min="1" value="8192">
+                            </div>
+                        </th>
+                        <td> <input class="form-control" id="seen-count" type="number" min="0" value="0" placeholder="Encounters"> </td>
+                    </tr>
+                    <tr>
+                        <th>Chance of ≥1 shiny</th>
+                        <td id="bnp" style="font-weight: bold; font-size: 18px;">0%</td>
+                    </tr>
+                </tbody>
+            </table>			
+            <canvas id="binom-graph" width="500" height="200" style="background:#111; border-radius:8px; margin-top:20px;"></canvas>
+        </div>
+		<div class="card border"
+			 style="padding: 20px; min-width: 320px; max-width: 380px; width: 100%; display: flex; flex-direction: column;">
+			<h2 class="content-title">Calculator</h2>
+			<input id="calc-display" class="form-control mb-15" style="font-size: 34px; height: 55px; text-align: right; font-weight: bold; background:#000; color:#fff;" readonly>
+			<div style="background:#111; border-radius:8px; padding:10px; flex:1; display:flex; min-height: 170px; max-height: 240px;">
+				<div style="display:grid; grid-template-columns:3fr 1fr; grid-template-rows:repeat(5, minmax(36px, 1fr)); gap:8px; width:100%;">
+					<div style="display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(4, minmax(36px, 1fr)); gap:8px;">
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('7')">7</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('8')">8</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('9')">9</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('4')">4</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('5')">5</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('6')">6</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('1')">1</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('2')">2</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('3')">3</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('0')">0</button>
+						<button class="btn" style="background:#ff8c00; font-size:30px;" onclick="calcPress('.')">.</button>
+						<button class="btn btn-danger" style="font-size:30px;" onclick="calcClear()">C</button>
+					</div>
+					<div style="display:grid; grid-template-rows:repeat(5, minmax(36px, 1fr)); gap:8px;">
+						<button class="btn" style="background:#333; font-size:30px;" onclick="calcPress('/')">÷</button>
+						<button class="btn" style="background:#333; font-size:30px;" onclick="calcPress('*')">×</button>
+						<button class="btn" style="background:#333; font-size:30px;" onclick="calcPress('-')">−</button>
+						<button class="btn" style="background:#333; font-size:30px;" onclick="calcPress('+')">+</button>
+						<button class="btn btn-success" style="font-size:30px;" onclick="calcEquals()">=</button>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>
+</div>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Halfmoon/1.0.4/js/halfmoon.min.js" integrity="sha512-R9gvwJKiTgw9ADz34UDXGetxd4zmcAfGWB7IKO05p79bliXyQ7Nd2PMYmxSF48pmVvj7RJNp8WXtJHF/ZRm3KA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="js/tooltip.js"></script>
+    <script src="js/page.js"></script>
+    <script src="js/tools.js"></script>
+</body>
+</html>

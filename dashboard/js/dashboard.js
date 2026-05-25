@@ -404,6 +404,17 @@ function formatDuration(ms) {
     }
 }
 
+function updateBinomialFromPhase(seen) {
+    const seenInput = document.getElementById("seen-count");
+    if (!seenInput) return;
+
+    seenInput.value = seen;
+
+    if (typeof updateBinomial === "function") {
+        updateBinomial();
+    }
+}
+
 function updateStats() {
     const hashObject = function(obj) {
         const jsonString = JSON.stringify(obj);
@@ -438,7 +449,7 @@ function updateStats() {
 		document.getElementById('total-shiny').innerHTML     = stats.total.shiny;
 		document.getElementById('total-max-iv').innerHTML    = stats.total.max_iv_sum;
 		document.getElementById('total-min-iv').innerHTML    = stats.total.min_iv_sum;
-
+		
 		document.getElementById('phase-seen').innerHTML      = stats.phase.seen;
 		document.getElementById('phase-lowest-sv').innerHTML = stats.phase.lowest_sv;
 		document.getElementById('phase-lowest-iv-sum').innerHTML  = stats.phase.lowest_iv_sum;
@@ -452,6 +463,8 @@ function updateStats() {
 		} else {
 			document.getElementById("phase-duration").innerHTML = formatDuration(now - start);
 		}
+
+        updateBinomialFromStats(stats.total.seen);
 	});
 };
 
