@@ -1,65 +1,72 @@
 -----------------------------------------------------------------------------
 -- General bot methods for gen 5 games (BW, B2W2)
--- Author: wyanido, storyzealot
--- Homepage: https://github.com/wyanido/pokebot-nds
+-- Author: wyanido, storyzealot, FalinMor_
+-- Homepage: https://github.com/Falin-Mor/pokebot-nds
 -----------------------------------------------------------------------------
 function update_pointers()
     local anchor = mdword(0x2146A88 + _ROM.offset)
+    local offset_adjustment = (_ROM.version == "W") and 0x20 or 0x0 -- white is offset by 0x20
+	
+	if _ROM.version == "B" then
+		species_base = 0x0226F284
+	else
+		species_base = 0x0226D8F4
+	end
 
     pointers = {
         -- Bag pouches, 4 byte pairs | 0001 0004 = 4x Master Ball
-        items_pouch     = 0x02233FAC + _ROM.offset, -- 1240 bytes long
-        key_items_pouch = 0x02234484 + _ROM.offset, -- 332 bytes long
-        tms_hms_case    = 0x022345D0 + _ROM.offset, -- 436 bytes long
-        medicine_pouch  = 0x02234784 + _ROM.offset, -- 192 bytes long
-        berries_pouch   = 0x02234844 + _ROM.offset, -- 234 bytes long
+        items_pouch     = 0x02233FAC + _ROM.offset + offset_adjustment, -- 1240 bytes long
+        key_items_pouch = 0x02234484 + _ROM.offset + offset_adjustment, -- 332 bytes long
+        tms_hms_case    = 0x022345D0 + _ROM.offset + offset_adjustment, -- 436 bytes long
+        medicine_pouch  = 0x02234784 + _ROM.offset + offset_adjustment, -- 192 bytes long
+        berries_pouch   = 0x02234844 + _ROM.offset + offset_adjustment, -- 234 bytes long
 
-        running_shoes = 0x0223C054 + _ROM.offset, -- 0 before receiving
+        running_shoes = 0x0223C054 + _ROM.offset + offset_adjustment, -- 0 before receiving
 
         -- Party
-        party_count = 0x022349B0 + _ROM.offset, -- 4 bytes before first index
-        party_data  = 0x022349B4 + _ROM.offset, -- PID of first party member
+        party_count = 0x022349B0 + _ROM.offset + offset_adjustment, -- 4 bytes before first index
+        party_data  = 0x022349B4 + _ROM.offset + offset_adjustment, -- PID of first party member
 
-        step_counter = 0x02235125 + _ROM.offset,
-        step_cycle   = 0x02235126 + _ROM.offset,
+        step_counter = 0x02235125 + _ROM.offset + offset_adjustment,
+        step_cycle   = 0x02235126 + _ROM.offset + offset_adjustment,
 
         -- Location
-        map_header        = 0x0224F90C + _ROM.offset,
-        trainer_x         = 0x0224F910 + _ROM.offset,
-        trainer_y         = 0x0224F914 + _ROM.offset,
-        trainer_z         = 0x0224F918 + _ROM.offset,
-        trainer_direction = 0x0224F924 + _ROM.offset, -- 0, 4, 8, 12 -> Up, Left, Down, Right
-        on_bike           = 0x0224F94C + _ROM.offset,
-        encounter_table   = 0x0224FFE0 + _ROM.offset,
-        map_matrix        = 0x02250C1C + _ROM.offset,
+        map_header        = 0x0224F90C + _ROM.offset + offset_adjustment,
+        trainer_x         = 0x0224F910 + _ROM.offset + offset_adjustment,
+        trainer_y         = 0x0224F914 + _ROM.offset + offset_adjustment,
+        trainer_z         = 0x0224F918 + _ROM.offset + offset_adjustment,
+        trainer_direction = 0x0224F924 + _ROM.offset + offset_adjustment, -- 0, 4, 8, 12 -> Up, Left, Down, Right
+        on_bike           = 0x0224F94C + _ROM.offset + offset_adjustment,
+        encounter_table   = 0x0224FFE0 + _ROM.offset + offset_adjustment,
+        map_matrix        = 0x02250C1C + _ROM.offset + offset_adjustment,
 
-        phenomenon_x = 0x02257018 + _ROM.offset,
-        phenomenon_z = 0x0225701C + _ROM.offset,
+        phenomenon_x = 0x02257018 + _ROM.offset + offset_adjustment,
+        phenomenon_z = 0x0225701C + _ROM.offset + offset_adjustment,
 
-        egg_hatching = 0x0226DF68 + _ROM.offset,
+        egg_hatching = 0x0226DF68 + _ROM.offset + offset_adjustment,
 
         -- Battle
-        battle_indicator = 0x0226ACE6,
-        foe_count        = 0x0226ACF0 + _ROM.offset, -- 4 bytes before the first index
-        current_foe      = 0x0226ACF4 + _ROM.offset, -- PID of foe, set immediately after the battle transition ends
-		foe_species		 = 0x0226D8F4,
-		maxHP      		 = 0x0226D8F6,
-		currentHP  		 = 0x0226D8F8,
-		foe_status  	 = 0x0226D816,
+        battle_indicator = 0x0226ACE6 + offset_adjustment,
+        foe_count        = 0x0226ACF0 + _ROM.offset + offset_adjustment, -- 4 bytes before the first index
+        current_foe      = 0x0226ACF4 + _ROM.offset + offset_adjustment, -- PID of foe, set immediately after the battle transition ends
+		foe_species		 = species_base,
+		maxHP    		 = species_base + 0x2,
+		currentHP		 = species_base + 0x4,
+		foe_status  	 = 0x022BEDBA + offset_adjustment,
 
         -- Misc
-        save_indicator            = 0x021F0100 + _ROM.offset, -- 1 while save menu is open
-        starter_selection_is_open = 0x022B0C40 + _ROM.offset, -- 0 when opening gift, 1 at starter select
-        battle_bag_page           = 0x022962C8 + _ROM.offset,
-        selected_starter          = 0x02269994 + _ROM.offset, -- Unconfirmed selection in gift box; 0 Snivy, 1 Tepig, 2 Oshawott, 4 Nothing
-        text_interrupt            = 0x2172BA0 + _ROM.offset,
-        battle_menu_state         = anchor + 0x1367C, -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
+        save_indicator            = 0x021F0100 + _ROM.offset + offset_adjustment, -- 1 while save menu is open
+        starter_selection_is_open = 0x022B0C40 + _ROM.offset + offset_adjustment, -- 0 when opening gift, 1 at starter select
+        battle_bag_page           = 0x022962C8 + _ROM.offset + offset_adjustment,
+        selected_starter          = 0x02269994 + _ROM.offset + offset_adjustment, -- Unconfirmed selection in gift box; 0 Snivy, 1 Tepig, 2 Oshawott, 4 Nothing
+        text_interrupt            = 0x2172BA0 + _ROM.offset + offset_adjustment,
+        battle_menu_state         = anchor + 0x1367C + offset_adjustment, -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
 
-        trainer_name = 0x2234FB0 + _ROM.offset,
-        trainer_id   = 0x2234FC0 + _ROM.offset,
+        trainer_name = 0x2234FB0 + _ROM.offset + offset_adjustment,
+        trainer_id   = 0x2234FC0 + _ROM.offset + offset_adjustment,
 
-        roamer = 0x225960C + _ROM.offset,
-        daycare_egg = 0x223CB74 + _ROM.offset,
+        roamer = 0x225960C + _ROM.offset + offset_adjustment,
+        daycare_egg = 0x223CB74 + _ROM.offset + offset_adjustment,
     }
 end
 
@@ -175,13 +182,14 @@ end
 -- @param name Name of the Pokemon
 -- @param field Form to check if registered
 function dex_registered(name, field)
-    local dex = {
-        ["caught"]       = 0x223D1B4 + _ROM.offset,
-        ["male"]         = 0x223D208 + _ROM.offset,
-        ["female"]       = 0x223D25C + _ROM.offset,
-        ["shiny_female"] = 0x223D304 + _ROM.offset,
-        ["seen"]         = 0x223D358 + _ROM.offset,
-        ["shiny_male"]   = 0x223D2B0 + _ROM.offset,
+    local offset_adjustment = (_ROM.version == "W") and 0x20 or 0x0 -- white is offset by 0x20
+	local dex = {
+        ["caught"]       = 0x223D1B4 + _ROM.offset + offset_adjustment,
+        ["male"]         = 0x223D208 + _ROM.offset + offset_adjustment,
+        ["female"]       = 0x223D25C + _ROM.offset + offset_adjustment,
+        ["shiny_female"] = 0x223D304 + _ROM.offset + offset_adjustment,
+        ["seen"]         = 0x223D358 + _ROM.offset + offset_adjustment,
+        ["shiny_male"]   = 0x223D2B0 + _ROM.offset + offset_adjustment,
     }
 
     local addr = dex[field]
@@ -303,7 +311,6 @@ function mode_random_encounters()
         hold_button("B")
 
         while not game_state.in_battle do
-			print_debug("in_battle: " .. tostring(game_state.in_battle) .. " | foe: " .. tostring(foe ~= nil))
 		    move_in_direction(dir1)
             move_in_direction(dir2)
         end

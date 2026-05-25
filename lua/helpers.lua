@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- General helper methods for bot functionality
--- Author: wyanido, storyzealot
--- Homepage: https://github.com/wyanido/pokebot-nds
+-- Author: wyanido, storyzealot, FalinMor_
+-- Homepage: https://github.com/Falin-Mor/pokebot-nds
 -----------------------------------------------------------------------------
 
 --- Attempts to re-read the party data from memory and update the global reference 

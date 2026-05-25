@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- Bot method overrides for HGSS
 -- Author: wyanido, FalinMor_
--- Homepage: https://github.com/wyanido/pokebot-nds
+-- Homepage: https://github.com/Falin-Mor/pokebot-nds
 -----------------------------------------------------------------------------
 local printed_hgss_not_ready  = false
 local printed_hgss_not_found  = false
