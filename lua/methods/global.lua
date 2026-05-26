@@ -526,7 +526,11 @@ function process_wild_encounter()
 
     if is_target then
         print("Wild " .. foe_name .. " is a target!")
-
+		
+		if #foe == 2 then
+		    abort("Wild " .. foe_name .. " is a target! Stopping for manual catching in a double battle.") 
+		end
+		
         if config.auto_catch then
 			while game_state.in_battle do
 				advance_battle_ui()
