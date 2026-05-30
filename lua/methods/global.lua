@@ -507,28 +507,40 @@ function catch_pokemon()
 end
 
 --- Logs the current wild foes and decides the next actions to take
+--- Logs the current wild foes and decides the next actions to take
 function process_wild_encounter()
     clear_all_inputs()
     wait_frames(30)
 
     -- Check all foes in case of a double battle
     local is_target = false
+    local target_index = 0  -- Track which foe is the target
     local foe_item = false
     local foe_name = foe[1].name
 
     for i, mon in ipairs(foe) do
-        is_target = pokemon.log_encounter(mon) or is_target
+        local mon_is_target = pokemon.log_encounter(mon)
+        if mon_is_target then
+            is_target = true
+            target_index = i  -- Store which foe was the target
+        end
 
         if mon.heldItem ~= "none" then
             foe_item = true
         end
     end
 
+    -- DEBUG: Print which foe was the target in double battle
+    if #foe == 2 and is_target then
+        print_debug("Target found at foe[" .. target_index .. "] = " .. foe[target_index].name)
+    end
+
     if is_target then
-        print("Wild " .. foe_name .. " is a target!")
+        local target_foe = foe[target_index]
+        print("Wild " .. target_foe.name .. " is a target!")
 		
 		if #foe == 2 then
-		    abort("Wild " .. foe_name .. " is a target! Stopping for manual catching in a double battle.") 
+		    abort("Wild " .. target_foe.name .. " is a target! Stopping for manual catching in a double battle.") 
 		end
 		
         if config.auto_catch then
