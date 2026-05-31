@@ -60,7 +60,7 @@ function update_pointers()
         battle_bag_page           = 0x022962C8 + _ROM.offset + offset_adjustment,
         selected_starter          = 0x02269994 + _ROM.offset + offset_adjustment, -- Unconfirmed selection in gift box; 0 Snivy, 1 Tepig, 2 Oshawott, 4 Nothing
         text_interrupt            = 0x2172BA0 + _ROM.offset + offset_adjustment,
-        battle_menu_state         = anchor + 0x1367C + offset_adjustment, -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
+        battle_menu_state         = 0x022D6B04 + _ROM.offset + offset_adjustment, -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
 
         trainer_name = 0x2234FB0 + _ROM.offset + offset_adjustment,
         trainer_id   = 0x2234FC0 + _ROM.offset + offset_adjustment,

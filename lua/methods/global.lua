@@ -182,7 +182,7 @@ function get_lead_mon_index()
 end
 
 local function stop_advancing()
-    return (not game_state.in_battle) or (get_battle_state() == "Menu")
+    return (not game_state.in_battle) or (get_battle_state() == "Menu") or (get_battle_state() == 1)
 end
 
 local function advance_battle_ui()

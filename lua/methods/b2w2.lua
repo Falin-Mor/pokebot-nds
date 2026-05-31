@@ -9,11 +9,13 @@ function update_pointers()
     local offset_adjustment = (_ROM.version == "W2") and 0x40 or 0x0 -- White 2 is offset by 0x40
 	
 	if _ROM.version == "B2" then
-		species_base = 0x0225B414
-		status_base	 = 0x022AB17A
+		species_base	  = 0x0225B414
+		status_base 	  = 0x022AB17A
+		battle_menu_state = 0x022C2EC4  -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
 	else
-		species_base = 0x0225B454
-		status_base  = 0x022AB1BA
+		species_base	  = 0x0225B454
+		status_base 	  = 0x022AB1BA
+		battle_menu_state = 0x022C2F04
 	end	
 	
     pointers = {
@@ -62,11 +64,10 @@ function update_pointers()
         starter_selection_is_open = 0x0219CFE2 + _ROM.offset + offset_adjustment, -- 0 when opening gift, 1 at starter select
         battle_bag_page           = 0x022845FC + _ROM.offset + offset_adjustment,
         selected_starter          = 0x022574C4 + _ROM.offset + offset_adjustment, -- Unconfirmed selection in gift box; 0 Snivy, 1 Tepig, 2 Oshawott, 4 Nothing
-        text_interrupt            = 0x216E640 + _ROM.offset + offset_adjustment, -- 2 when a repel/fishing dialogue box is open, 0 otherwise
-        battle_menu_state         = anchor + 0x1367C + offset_adjustment, -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
-
-        trainer_name = 0x221E9E8 + _ROM.offset + offset_adjustment,
-        trainer_id   = 0x221E9F8 + _ROM.offset + offset_adjustment,
+        text_interrupt            = 0x216E640  + _ROM.offset + offset_adjustment, -- 2 when a repel/fishing dialogue box is open, 0 otherwise
+		battle_menu_state		  = 0x022C2EC4 + _ROM.offset + offset_adjustment, 
+        trainer_name			  = 0x221E9E8  + _ROM.offset + offset_adjustment,
+        trainer_id  			  = 0x221E9F8  + _ROM.offset + offset_adjustment,
 
         hidden_grottos = 0x22291B0 + _ROM.offset + offset_adjustment,
         daycare_egg = 0x22264AC + _ROM.offset + offset_adjustment,
