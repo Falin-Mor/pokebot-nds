@@ -82,7 +82,7 @@ function updateOptionVisibility() {
             break;
         case 'random_encounters_small':
             $('#option_moving_encounters').show();
-            break;
+            break;   
         case 'phenomenon_encounters':
             $('#option_moving_encounters').show();
             break;
