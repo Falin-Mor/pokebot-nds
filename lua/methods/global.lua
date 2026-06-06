@@ -3,152 +3,6 @@
 -- Author: wyanido, storyzealot, FalinMor_
 -- Homepage: https://github.com/Falin-Mor/pokebot-nds
 -----------------------------------------------------------------------------
-pointers = pointers or {}
-
----------------------------------------------------------
--- UNIVERSAL FISHING MODULE (Gen 4 + Gen 5)
----------------------------------------------------------
-
-pointers.fishing = pointers.fishing or {}
-
--- Gen 4
-pointers.fishing.D  = { fishing_exclamation_popup = 0x02291E57 }
-pointers.fishing.P  = { fishing_exclamation_popup = 0x02291E1F }
-pointers.fishing.PL = { fishing_exclamation_popup = 0x022A1AAF }
-
-pointers.fishing.HG = { fishing_exclamation_popup = 0x021DEA33 }
-pointers.fishing.SS = { fishing_exclamation_popup = 0x021DEA33 } 
-
--- Gen 5
-pointers.fishing.B  = { fishing_exclamation_popup = 0x02259857 }
-pointers.fishing.W  = { fishing_exclamation_popup = 0x02259877 }
-
-pointers.fishing.B2 = { fishing_exclamation_popup = 0x0224738F }
-pointers.fishing.W2 = { fishing_exclamation_popup = 0x022473CF }
-
----------------------------------------------------------
--- SAFE POINTER RESOLUTION
----------------------------------------------------------
-
-local GAME = _ROM.version
-local fish_ptr = pointers.fishing[GAME]
-
-if not fish_ptr then
-    fish_ptr = { fishing_exclamation_popup = 0x0211184C } -- fallback
-    pointers.fishing[GAME] = fish_ptr
-end
-
----------------------------------------------------------
--- COUNTERS
----------------------------------------------------------
-
-bite_count = bite_count or 0
-miss_count = miss_count or 0
-
-local function print_bite_status()
-    print("Bites: " .. bite_count .. " | Misses: " .. miss_count)
-end
-
-local function count_bite()
-    bite_count = bite_count + 1
-    print_bite_status()
-end
-
-local function count_miss()
-    miss_count = miss_count + 1
-    print_bite_status()
-end
-
----------------------------------------------------------
--- RAW FLAG READ
----------------------------------------------------------
-
-local function fishing_flag()
-    return mbyte(fish_ptr.fishing_exclamation_popup)
-end
-
----------------------------------------------------------
--- UNIVERSAL BITE DETECTOR
----------------------------------------------------------
-
-local function fishing_bite_detected(v)
-
-    -- SS: simple state, bite = 1
-    if GAME == "SS" or GAME == "HG" then
-        return v == 1
-    end
-
-    -- Black & White: bite = 2
-    if GAME == "B" or GAME == "W" then
-        return v == 2
-    end
-
-    -- Black 2 / White 2: bite = 2
-    if GAME == "B2" or GAME == "W2" then
-        return v == 2
-    end
-
-    -- Diamond / Pearl / Platinum: bite = 4
-    if GAME == "D" or GAME == "P" or GAME == "PL" then
-        return v == 4
-    end
-
-    return false
-end
-
----------------------------------------------------------
--- MAIN FISHING MODE (FRAMEADVANCE DETECTOR)
----------------------------------------------------------
-
-function mode_fishing()
-    local TIMEOUT_FRAMES = 300
-
-    if game_state.in_battle then
-        process_wild_encounter()
-        return
-    end
-
-    -- Cast rod
-    press_button("Y")
-    wait_frames(60)
-
-    local frames = 0
-    local bite = false
-
-    -- High‑frequency detection loop
-    while frames < TIMEOUT_FRAMES do
-        local v = fishing_flag()
-
-        if fishing_bite_detected(v) then
-            press_button("A")
-            bite = true
-            break
-        end
-
-        frames = frames + 1
-        emu.frameadvance()
-    end
-
-    if bite then
-        local wait_frames_count = 0
-        while not game_state.in_battle and wait_frames_count < 180 do
-            progress_text()
-            wait_frames_count = wait_frames_count + 1
-        end
-
-        if game_state.in_battle then
-            count_bite()
-            process_wild_encounter()
-            wait_frames(90)
-        else
-            count_miss()
-        end
-    else
-        print("Not even a nibble or got away...")
-        count_miss()
-        press_sequence(30, "A", 20)
-    end
-end
 
 --- Logs wild encounters without automated inputs while the user plays
 function mode_manual()
@@ -338,6 +192,32 @@ function subdue_status()
             end
         end
     end
+	
+	    -- Remove Paralyze moves vs limber
+    if foe[1].ability == "Limber" then
+        local paralyze = {"Thunder Wave", "Stun Spore", "Glare"}
+        for _, g in ipairs(paralyze) do
+            for i, m in ipairs(status_moves) do
+                if m == g then
+                    table.remove(status_moves, i)
+                    break
+                end
+            end
+        end
+    end
+	
+	    -- Remove Lightning moves vs Stun Immune
+    if foe[1].ability == "Motor Drive" or "Lightning Rod" or "Volt Absorb" then
+        local lightning = {"Thunder Wave", "Stun Spore"}
+        for _, g in ipairs(lightning) do
+            for i, m in ipairs(status_moves) do
+                if m == g then
+                    table.remove(status_moves, i)
+                    break
+                end
+            end
+        end
+    end
 
     -- Find usable status move
     local lead = get_lead_mon_index()
@@ -383,6 +263,8 @@ function should_fight_foe()
 
     return true
 end
+
+safari_balls_left = safari_balls_left or 30
 
 --- Continuously tries to catch the foe until the battle ends, or there are no valid Poke Balls left
 function catch_pokemon()
@@ -480,19 +362,23 @@ function catch_pokemon()
 
         wait_frames(20)
 
-        touch_screen_at(38, 174)
-        wait_frames(90)
+		if game_state.map_name == "Safari Zone" then
+			touch_screen_at(130, 80)
+			safari_balls_left = safari_balls_left - 1
+		else
+			touch_screen_at(38, 174)
+			wait_frames(90)
 
-        touch_screen_at(192, 36)
-        wait_frames(90)
-
-        use_ball(ball_index)
-
-        -- Wait until catch failed or battle ended
+			touch_screen_at(192, 36)
+			wait_frames(90)
+			
+			use_ball(ball_index)
+		end
+		
         while mbyte(pointers.battle_menu_state) ~= 1 and game_state.in_battle do
             press_sequence("B", 8)
             touch_screen_at(0, 0) -- Skip Pokedex entry screen in HGSS without pressing A to avoid accidental menu inputs 
-        end
+        end	
     end
 
     print("Skipping through all post-battle dialogue... (This may take a few seconds)")
@@ -500,14 +386,27 @@ function catch_pokemon()
     for i = 0, 59, 1 do
         press_sequence("B", 10)
     end
+	
+	if game_state.map_name == "Safari Zone" and safari_balls_left <= 15 then
+		print("Safari Balls low. Retiring...")
 
-    if config.save_game_after_catch then
+		touch_screen_at(40, 35) -- RETIRE
+		wait_frames(60)
+
+		touch_screen_at(128, 72) -- Confirm
+		wait_frames(120)
+	end
+	
+	if game_state.map_name == "Safari Zone Gate" then
+		save_game()
+		abort("Ran out of balls in the Safari Zone. Exiting Script.")
+	end	
+    
+	if config.save_game_after_catch and not game_state.map_name == "Safari Zone" then
         save_game()
     end
 end
 
---- Logs the current wild foes and decides the next actions to take
---- Logs the current wild foes and decides the next actions to take
 function process_wild_encounter()
     clear_all_inputs()
     wait_frames(30)
@@ -876,6 +775,64 @@ function mode_static_encounters()
     else
         print(mon.name .. " was not a target, resetting...")
         soft_reset()
+    end
+end
+
+function mode_fishing()
+    local GAME = _ROM.version
+    local exclaim_ptr = pointers.fishing_exclamation_popup
+    if not exclaim_ptr then return end
+
+    local function bite_value()
+        if GAME == "HG" or GAME == "SS" then return 1 end
+        if GAME == "B"  or GAME == "W"  then return 2 end
+        if GAME == "B2" or GAME == "W2" then return 2 end
+        if GAME == "D"  or GAME == "P"  or GAME == "PL" then return 4 end
+        return 0
+    end
+
+    -- If already in battle, handle encounter
+    if game_state.in_battle then
+        process_wild_encounter()
+        return
+    end
+
+    press_button("Y")
+    wait_frames(60)
+
+    local TIMEOUT = 300
+    local bite = false
+    local target = bite_value()
+
+    for i = 1, TIMEOUT do
+        if mbyte(exclaim_ptr) == target then
+            press_button("A")
+            bite = true
+            break
+        end
+        emu.frameadvance()
+    end
+
+    if bite then
+        for i = 1, 180 do
+            if game_state.in_battle then break end
+            progress_text()
+        end
+
+        if game_state.in_battle then
+            bite_count = (bite_count or 0) + 1
+            print("Bites: " .. bite_count .. " | Misses: " .. (miss_count or 0))
+            process_wild_encounter()
+            wait_frames(90)
+        else
+            miss_count = (miss_count or 0) + 1
+            print("Bites: " .. (bite_count or 0) .. " | Misses: " .. miss_count)
+        end
+    else
+        print("Not even a nibble or got away...")
+        miss_count = (miss_count or 0) + 1
+        print("Bites: " .. (bite_count or 0) .. " | Misses: " .. miss_count)
+        press_sequence(30, "A", 20)
     end
 end
 

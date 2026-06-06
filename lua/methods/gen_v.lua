@@ -9,8 +9,10 @@ function update_pointers()
 	
 	if _ROM.version == "B" then
 		species_base = 0x0226F284
+		fishing_exclamation_popup = 0x02259857
 	else
 		species_base = 0x0226D8F4
+		fishing_exclamation_popup = 0x02259877
 	end
 
     pointers = {
@@ -44,7 +46,9 @@ function update_pointers()
         phenomenon_z = 0x0225701C + _ROM.offset + offset_adjustment,
 
         egg_hatching = 0x0226DF68 + _ROM.offset + offset_adjustment,
-
+		
+		fishing_exclamation_popup = fishing_exclamation_popup,
+		
         -- Battle
         battle_indicator = 0x0226ACE6 + offset_adjustment,
         foe_count        = 0x0226ACF0 + _ROM.offset + offset_adjustment, -- 4 bytes before the first index

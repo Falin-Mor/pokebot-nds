@@ -58,7 +58,7 @@ local function diamond_scan_species_window()
 
     return nil, nil
 end
-
+	
 function update_pointers()
     local anchor = mdword(0x21C489C + _ROM.offset)
     local foe_anchor = mdword(anchor + 0x226FE)
@@ -73,6 +73,14 @@ function update_pointers()
 	if species_addr then
 		hp_addr  = species_addr + 0x4C
 		max_addr = species_addr + 0x50
+	end
+		
+	if _ROM.version == "D" then
+		fishing_exclamation_popup = 0x02291E57
+	elseif _ROM.version == "P" then
+		fishing_exclamation_popup = 0x02291E1F
+	else
+		fishing_exclamation_popup = 0x022A1AAF
 	end
 	
     pointers = {
@@ -113,7 +121,9 @@ function update_pointers()
         battle_menu_state      = anchor + 0x455A6,
         battle_menu_state2 = anchor + 0xED6A6,
         battle_indicator       = 0x21A1B2A + _ROM.offset,
-
+		
+		fishing_exclamation_popup = fishing_exclamation_popup,
+		
         trainer_name = anchor - 0x22,
         trainer_id   = anchor - 0x12,
 
@@ -404,24 +414,35 @@ function mode_starters()
     end
 end
 
+local printed_SZ_warning = false
+
 --- Encounters wild Pokemon until a target is found. Can battle and catch
-	function mode_random_encounters()
-local all_dirs = {"Up", "Down", "Left", "Right"}
+function mode_random_encounters()
+	local all_dirs = {"Up", "Down", "Left", "Right"}
 
-local function spin()
-    -- Read facing safely
-    local facing_value = mbyte(pointers.facing)      -- 0=Up,1=Down,2=Left,3=Right
-    local facing_dir = all_dirs[facing_value + 1]    -- Convert to string
+	if game_state.map_name == "Safari Zone" and not printed_SZ_warning then
+		print("Safari Zone Detected. If auto-catch is enabled,")
+		print("this bot will assume you started with 30 balls.")
+		print("This will stop when bot uses more than 15 in one run")
+		print("and save upon exit. This can be adjusted in global.lua.")
+		print("Use at less than 15 at your own risk.")
+		printed_SZ_warning = true
+	end	
+	
+	local function spin()
+		-- Read facing safely
+		local facing_value = mbyte(pointers.facing)      -- 0=Up,1=Down,2=Left,3=Right
+		local facing_dir = all_dirs[facing_value + 1]    -- Convert to string
 
-    while not game_state.in_battle do
-        -- Build a 3‑direction spin that excludes the facing direction
-        for _, dir in ipairs(all_dirs) do
-            if dir ~= facing_dir then
-                press_sequence(dir, 3)
-            end
-        end
-    end
-end
+		while not game_state.in_battle do
+			-- Build a 3‑direction spin that excludes the facing direction
+			for _, dir in ipairs(all_dirs) do
+				if dir ~= facing_dir then
+					press_sequence(dir, 3)
+				end
+			end
+		end
+	end
 
     local function run_back_and_forth()
         local dir1, dir2, start_face

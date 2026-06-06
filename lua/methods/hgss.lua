@@ -74,7 +74,7 @@ function update_pointers()
 		hp_addr  = species_addr + 0x4C
 		max_addr = species_addr + 0x50
 	end
-
+	
     pointers = {
         -- items_pocket
         -- medicine_pocket
@@ -108,7 +108,7 @@ function update_pointers()
         battle_menu_state      = anchor + 0x230EC, -- 01 is FIGHT menu, 04 is Move Select, 08 is Bag,
         battle_menu_state2     = anchor + 0x40281,
         battle_indicator       = 0x21E76D2 + _ROM.offset,
-        fishing_bite_indicator = 0x21DD853 + _ROM.offset,
+        fishing_exclamation_popup = 0x021DEA33,
 
         easy_chat_open           = anchor + 0x28644,
         easy_chat_category_sizes = anchor + 0x200C4,

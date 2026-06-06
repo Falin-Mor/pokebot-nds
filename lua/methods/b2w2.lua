@@ -9,10 +9,12 @@ function update_pointers()
     local offset_adjustment = (_ROM.version == "W2") and 0x40 or 0x0 -- White 2 is offset by 0x40
 	
 	if _ROM.version == "B2" then
+		fishing_exclamation_popup = 0x0224738F
 		species_base	  = 0x0225B414
 		status_base 	  = 0x022AB17A
 		battle_menu_state = 0x022C2EC4  -- 1 on FIGHT menu, 2 on move select, 4 on switch/run after faint, 0 otherwise
 	else
+		fishing_exclamation_popup = 0x022473CF
 		species_base	  = 0x0225B454
 		status_base 	  = 0x022AB1BA
 		battle_menu_state = 0x022C2F04
@@ -68,7 +70,7 @@ function update_pointers()
 		battle_menu_state		  = 0x022C2EC4 + _ROM.offset + offset_adjustment, 
         trainer_name			  = 0x221E9E8  + _ROM.offset + offset_adjustment,
         trainer_id  			  = 0x221E9F8  + _ROM.offset + offset_adjustment,
-
+		fishing_exclamation_popup = fishing_exclamation_popup,
         hidden_grottos = 0x22291B0 + _ROM.offset + offset_adjustment,
         daycare_egg = 0x22264AC + _ROM.offset + offset_adjustment,
         -- pass_power_1_duration = 0x21410B8 + _ROM.offset + offset_adjustment,
